@@ -31,21 +31,23 @@ if(isset($_POST['update'])){
 $categories = $pdo->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll();
 ?>
 
-<h3>📂 Categories</h3>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h3 class="mb-0">Categories</h3>
+</div>
 
 <!-- FORM -->
-<div class="card p-3 mb-3">
+<div class="card content-card p-3 mb-3">
     <form method="POST">
 
         <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
 
         <input type="text" name="name"
-               class="form-control"
+               class="form-control form-control-lg"
                value="<?= $edit['name'] ?? '' ?>"
                placeholder="Category Name"
                required>
 
-        <button class="btn btn-success mt-2"
+        <button class="btn btn-primary mt-3"
                 name="<?= $edit ? 'update' : 'add' ?>">
             <?= $edit ? 'Update' : 'Add' ?>
         </button>
@@ -54,9 +56,10 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll
 </div>
 
 <!-- TABLE -->
-<div class="card p-3">
+<div class="card content-card p-3">
 
-<table class="table table-bordered">
+<div class="table-responsive">
+<table class="table table-bordered table-hover align-middle mb-0">
 <tr>
     <th>ID</th>
     <th>Name</th>
@@ -81,5 +84,6 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll
 <?php endforeach; ?>
 
 </table>
+</div>
 
 </div>

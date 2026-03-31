@@ -1,27 +1,8 @@
 <?php
 require_once "../database/db.php";
-// Add this at the top if not already in dashboard.php
-
-/* =====================
-   ADD PRODUCT
-===================== */
-if(isset($_POST['add'])){
-    $stmt = $pdo->prepare("INSERT INTO products(name,price,stock,barcode,category_id)
-                           VALUES(?,?,?,?,?)");
-
-    $stmt->execute([
-        $_POST['name'],
-        $_POST['price'],
-        $_POST['stock'],
-        $_POST['barcode'],
-        $_POST['category_id']
-    ]);
-    
-    $_SESSION['message'] = "✅ Product added successfully!";
-    $_SESSION['message_type'] = "success";
-    header("Location: dashboard.php?page=products");
-    exit;
-}
+require_once dirname(__DIR__) . "/includes/product_schema.php";
+require_once dirname(__DIR__) . "/includes/product_media.php";
+ensure_product_extended_schema($pdo);
 
 /* =====================
    DELETE WITH CHECK
@@ -57,51 +38,20 @@ if(isset($_GET['delete'])){
 }
 
 /* =====================
-   EDIT FETCH
-===================== */
-$edit = null;
-if(isset($_GET['edit'])){
-    $stmt = $pdo->prepare("SELECT * FROM products WHERE id=?");
-    $stmt->execute([$_GET['edit']]);
-    $edit = $stmt->fetch();
-}
-
-/* =====================
-   UPDATE
-===================== */
-if(isset($_POST['update'])){
-    $stmt = $pdo->prepare("UPDATE products
-        SET name=?, price=?, stock=?, barcode=?, category_id=?
-        WHERE id=?");
-
-    $stmt->execute([
-        $_POST['name'],
-        $_POST['price'],
-        $_POST['stock'],
-        $_POST['barcode'],
-        $_POST['category_id'],
-        $_POST['id']
-    ]);
-    
-    $_SESSION['message'] = "✅ Product updated successfully!";
-    $_SESSION['message_type'] = "success";
-    header("Location: dashboard.php?page=products");
-    exit;
-}
-
-/* =====================
    SEARCH + LIST
 ===================== */
 $search = $_GET['search'] ?? '';
 
+$imgSelect = '(SELECT pi.file_path FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1)';
+
 if($search != ''){
-    $stmt = $pdo->prepare("SELECT * FROM products
-        WHERE name LIKE ? OR barcode LIKE ?
-        ORDER BY id DESC");
+    $stmt = $pdo->prepare("SELECT p.*, {$imgSelect} AS image_path FROM products p
+        WHERE p.name LIKE ? OR p.barcode LIKE ?
+        ORDER BY p.id DESC");
     $stmt->execute(["%$search%","%$search%"]);
     $products = $stmt->fetchAll();
 }else{
-    $products = $pdo->query("SELECT * FROM products ORDER BY id DESC")->fetchAll();
+    $products = $pdo->query("SELECT p.*, {$imgSelect} AS image_path FROM products p ORDER BY p.id DESC")->fetchAll();
 }
 
 /* categories dropdown */
@@ -268,7 +218,10 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
 }
 </style>
 
-<h3>🛒 Products</h3>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h3 class="mb-0">Products</h3>
+    <a href="product_create.php" class="btn btn-primary">+ New product</a>
+</div>
 
 <!-- Display Alert Messages -->
 <?php if(isset($_SESSION['message'])): ?>
@@ -290,88 +243,24 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
                class="form-control"
                placeholder="Search product name / barcode"
                value="<?= htmlspecialchars($search) ?>">
-        <div class="input-group-append">
-            <button class="btn btn-primary" type="submit">🔍 Search</button>
-            <?php if($search != ''): ?>
-                <a href="dashboard.php?page=products" class="btn btn-secondary">Clear</a>
-            <?php endif; ?>
-        </div>
+        <button class="btn btn-primary" type="submit">Search</button>
+        <?php if($search != ''): ?>
+            <a href="dashboard.php?page=products" class="btn btn-outline-secondary">Clear</a>
+        <?php endif; ?>
     </div>
 </form>
 
-<!-- FORM -->
-<div class="card p-3 mb-3">
-    <h5><?= $edit ? '✏️ Edit Product' : '➕ Add New Product' ?></h5>
-    <hr>
-    
-    <form method="POST">
-        <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
-        
-        <div class="form-group">
-            <label>Product Name *</label>
-            <input type="text" name="name" class="form-control mb-2"
-                   placeholder="Enter product name"
-                   value="<?= htmlspecialchars($edit['name'] ?? '') ?>" required>
-        </div>
-        
-        <div class="form-row">
-            <div class="col-md-6">
-                <label>Price (Rs.) *</label>
-                <input type="number" name="price" class="form-control mb-2"
-                       placeholder="0.00"
-                       step="0.01"
-                       value="<?= $edit['price'] ?? '' ?>" required>
-            </div>
-            
-            <div class="col-md-6">
-                <label>Stock *</label>
-                <input type="number" name="stock" class="form-control mb-2"
-                       placeholder="0"
-                       value="<?= $edit['stock'] ?? '' ?>" required>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label>Barcode</label>
-            <input type="text" name="barcode" class="form-control mb-2"
-                   placeholder="Enter barcode (optional)"
-                   value="<?= htmlspecialchars($edit['barcode'] ?? '') ?>">
-        </div>
-        
-        <div class="form-group">
-            <label>Category</label>
-            <select name="category_id" class="form-control mb-2">
-                <option value="">-- Select Category --</option>
-                <?php foreach($categories as $c): ?>
-                    <option value="<?= $c['id'] ?>"
-                        <?= ($edit && $edit['category_id']==$c['id'])?'selected':'' ?>>
-                        <?= htmlspecialchars($c['name']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        
-        <button class="btn btn-<?= $edit ? 'warning' : 'success' ?>"
-                name="<?= $edit ? 'update' : 'add' ?>">
-            <?= $edit ? '🔄 Update Product' : '➕ Add Product' ?>
-        </button>
-        
-        <?php if($edit): ?>
-            <a href="dashboard.php?page=products" class="btn btn-secondary">❌ Cancel</a>
-        <?php endif; ?>
-    </form>
-</div>
-
 <!-- TABLE -->
-<div class="card p-3">
-    <h5>📋 Product List</h5>
+<div class="card content-card p-3">
+    <h5>Product List</h5>
     <hr>
     
     <?php if(count($products) > 0): ?>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-                <thead class="thead-light">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
                     <tr>
+                        <th style="width:64px">Image</th>
                         <th>ID</th>
                         <th>Name</th>
                         <th>Price</th>
@@ -405,6 +294,10 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
                     ?>
                     
                     <tr>
+                        <td class="p-1">
+                            <img src="<?= htmlspecialchars(product_image_url($p['image_path'] ?? null)) ?>"
+                                 alt="" width="48" height="48" class="rounded border" style="width:48px;height:48px;object-fit:cover;">
+                        </td>
                         <td><?= $p['id'] ?></td>
                         <td><?= htmlspecialchars($p['name']) ?></td>
                         <td>Rs. <?= number_format($p['price'], 2) ?></td>
@@ -414,7 +307,10 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
                         <td><?= htmlspecialchars($p['barcode'] ?: '-') ?></td>
                         <td><?= htmlspecialchars($catName ?: '-') ?></td>
                         <td>
-                            <a href="dashboard.php?page=products&edit=<?= $p['id'] ?>"
+                            <?php if (!empty($p['barcode'])): ?>
+                                <a href="print_barcode.php?id=<?= (int)$p['id'] ?>" target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm me-1">Print label</a>
+                            <?php endif; ?>
+                            <a href="product_create.php?id=<?= (int)$p['id'] ?>"
                                class="btn btn-primary btn-sm"
                                style="display: inline-block; margin-right: 5px;">
                                 Edit
@@ -437,7 +333,7 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
         </div>
     <?php else: ?>
         <div class="alert alert-info text-center">
-            📭 No products found. Click "Add Product" to get started.
+            No products found. Use <strong>New product</strong> to create the first SKU.
         </div>
     <?php endif; ?>
 </div>

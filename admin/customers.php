@@ -78,31 +78,33 @@ if(isset($_GET['edit'])){
 $customers = $pdo->query("SELECT * FROM customers ORDER BY id DESC")->fetchAll();
 ?>
 
-<h3>👤 Customers</h3>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h3 class="mb-0">Customers</h3>
+</div>
 
 <!-- FORM -->
-<div class="card p-3 mb-3">
+<div class="card content-card p-3 mb-3">
 
 <form method="POST">
 
 <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
 
-<input type="text" name="name" class="form-control mb-2"
+<input type="text" name="name" class="form-control form-control-lg mb-2"
        placeholder="Customer Name"
        value="<?= $edit['name'] ?? '' ?>" required>
 
-<input type="text" name="phone" class="form-control mb-2"
+<input type="text" name="phone" class="form-control form-control-lg mb-2"
        placeholder="Phone"
        value="<?= $edit['phone'] ?? '' ?>" required>
 
-<input type="email" name="email" class="form-control mb-2"
+<input type="email" name="email" class="form-control form-control-lg mb-2"
        placeholder="Email"
        value="<?= $edit['email'] ?? '' ?>">
 
-<textarea name="address" class="form-control mb-2"
+<textarea name="address" class="form-control form-control-lg mb-2"
           placeholder="Address"><?= $edit['address'] ?? '' ?></textarea>
 
-<button class="btn btn-success"
+<button class="btn btn-primary"
         name="<?= $edit ? 'update' : 'add' ?>">
 
     <?= $edit ? 'Update Customer' : 'Add Customer' ?>
@@ -121,9 +123,10 @@ $customers = $pdo->query("SELECT * FROM customers ORDER BY id DESC")->fetchAll()
 </div>
 
 <!-- TABLE -->
-<div class="card p-3">
+<div class="card content-card p-3">
 
-<table class="table table-bordered table-hover">
+<div class="table-responsive">
+<table class="table table-bordered table-hover align-middle mb-0">
 
 <tr>
     <th>ID</th>
@@ -158,5 +161,6 @@ $customers = $pdo->query("SELECT * FROM customers ORDER BY id DESC")->fetchAll()
 <?php endforeach; ?>
 
 </table>
+</div>
 
 </div>

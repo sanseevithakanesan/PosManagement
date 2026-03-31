@@ -1,0 +1,56 @@
+.app-body {
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    min-height: 100vh;
+    color: #0f172a;
+}
+
+.auth-shell {
+    min-height: 100vh;
+}
+
+.auth-card {
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+}
+
+.auth-brand {
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.topbar-glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-sidebar {
+    min-height: 100vh;
+    background: #0f172a;
+}
+
+.admin-sidebar .nav-link {
+    color: #cbd5e1;
+    border-radius: 0.6rem;
+    margin-bottom: 0.4rem;
+    padding: 0.55rem 0.85rem;
+}
+
+.admin-sidebar .nav-link:hover,
+.admin-sidebar .nav-link.active {
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
+.content-card {
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.metric-card {
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
