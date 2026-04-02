@@ -33,6 +33,11 @@
                 <a href="dashboard.php?page=home" class="nav-link <?= $page == 'home' ? 'active' : '' ?>">Dashboard</a>
                 <a href="dashboard.php?page=categories" class="nav-link <?= $page == 'categories' ? 'active' : '' ?>">Categories</a>
                 <a href="dashboard.php?page=products" class="nav-link <?= $page == 'products' ? 'active' : '' ?>">Products</a>
+                <a href="dashboard.php?page=purchases" class="nav-link <?= $page == 'purchases' ? 'active' : '' ?>">Purchases</a>
+                <a href="dashboard.php?page=income" class="nav-link <?= $page == 'income' ? 'active' : '' ?>">Income</a>
+                <a href="dashboard.php?page=expenses" class="nav-link <?= $page == 'expenses' ? 'active' : '' ?>">Expenses</a>
+                <a href="dashboard.php?page=payroll" class="nav-link <?= $page == 'payroll' ? 'active' : '' ?>">Payroll</a>
+                <a href="dashboard.php?page=reports" class="nav-link <?= $page == 'reports' ? 'active' : '' ?>">Reports</a>
                 <a href="dashboard.php?page=customers" class="nav-link <?= $page == 'customers' ? 'active' : '' ?>">Customers</a>
                 <a href="dashboard.php?page=pos" class="nav-link <?= $page == 'pos' ? 'active' : '' ?>">Billing</a>
                 <a href="../logout.php" class="nav-link mt-2">Logout</a>
@@ -61,6 +66,11 @@
                             <a href="dashboard.php?page=home" class="nav-link <?= $page == 'home' ? 'active' : '' ?>">Dashboard</a>
                             <a href="dashboard.php?page=categories" class="nav-link <?= $page == 'categories' ? 'active' : '' ?>">Categories</a>
                             <a href="dashboard.php?page=products" class="nav-link <?= $page == 'products' ? 'active' : '' ?>">Products</a>
+                            <a href="dashboard.php?page=purchases" class="nav-link <?= $page == 'purchases' ? 'active' : '' ?>">Purchases</a>
+                            <a href="dashboard.php?page=income" class="nav-link <?= $page == 'income' ? 'active' : '' ?>">Income</a>
+                            <a href="dashboard.php?page=expenses" class="nav-link <?= $page == 'expenses' ? 'active' : '' ?>">Expenses</a>
+                            <a href="dashboard.php?page=payroll" class="nav-link <?= $page == 'payroll' ? 'active' : '' ?>">Payroll</a>
+                            <a href="dashboard.php?page=reports" class="nav-link <?= $page == 'reports' ? 'active' : '' ?>">Reports</a>
                             <a href="dashboard.php?page=customers" class="nav-link <?= $page == 'customers' ? 'active' : '' ?>">Customers</a>
                             <a href="dashboard.php?page=pos" class="nav-link <?= $page == 'pos' ? 'active' : '' ?>">Billing</a>
                             <a href="../logout.php" class="nav-link mt-2">Logout</a>
@@ -112,6 +122,21 @@
                 }
                 if($page == 'products'){
                     require_once "products.php";
+                }
+                if($page == 'purchases'){
+                    require_once "purchases.php";
+                }
+                if($page == 'income'){
+                    require_once "income.php";
+                }
+                if($page == 'expenses'){
+                    require_once "expenses.php";
+                }
+                if($page == 'payroll'){
+                    require_once "payroll.php";
+                }
+                if($page == 'reports'){
+                    require_once "reports.php";
                 }
                 if($page == 'customers'){
                     require_once "customers.php";

@@ -2,7 +2,7 @@
 session_start();
 require_once "database/db.php";
 
-if(isset($_POST['email'])){
+if(isset($_POST['email'])){//uiuiuoi
 
     $email = $_POST['email'];
     $password = $_POST['password'];
