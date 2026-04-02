@@ -7,7 +7,7 @@ if(isset($_POST['add'])){
         ->execute([$_POST['name']]);
 }
 
-/* DELETE */
+/* DELETEvbv */
 if(isset($_GET['delete'])){
     $pdo->prepare("DELETE FROM categories WHERE id=?")
         ->execute([$_GET['delete']]);
