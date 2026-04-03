@@ -128,7 +128,8 @@ if($barcode != ''){
 ===================== */
 $imgSel = '(SELECT pi.file_path FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1)';
 $products  = $pdo->query("SELECT p.*, {$imgSel} AS image_path FROM products p ORDER BY p.name")->fetchAll();
-$cart      = $pdo->query("
+
+$cart = $pdo->query("
     SELECT c.id, c.qty, c.discount_type, c.discount_value,
            p.id AS pid, p.name, p.price, p.stock,
            (SELECT pi.file_path FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1) AS image_path
@@ -1035,11 +1036,11 @@ body {
                             <div class="prod-thumb-wrap">
                                 <img src="<?= htmlspecialchars($prodImgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="">
                             </div>
-                            <div class="prod-info">
-                                <div class="prod-name"><?= htmlspecialchars($p['name']) ?></div>
-                                <div class="prod-price">💰 <?= number_format($p['price'], 2) ?></div>
-                                <span class="stock-badge <?= $badge_class ?>"><?= $badge_text ?></span>
-                            </div>
+                                <div class="prod-info">
+                                    <div class="prod-name"><?= htmlspecialchars($p['name']) ?></div>
+                                    <div class="prod-price">💰 <?= number_format($p['price'], 2) ?></div>
+                                    <span class="stock-badge <?= $badge_class ?>"><?= $badge_text ?></span>
+                                </div>
                         </div>
                     </div>
                 </form>

@@ -1,7 +1,12 @@
 <?php
-  session_start();
+  require_once "../includes/auth.php";
   require_once "../database/db.php";
   $page = $_GET['page'] ?? 'home';
+
+  // Role based access control
+  if ($_SESSION['role'] == 'cashier' && !in_array($page, ['home', 'pos'])) {
+      $page = 'home';
+  }
 
   if (
       $page === 'pos'
@@ -11,6 +16,14 @@
       require_once dirname(__DIR__) . '/includes/cart_schema.php';
       ensure_cart_discount_columns($pdo);
       require __DIR__ . '/pos_cart_ajax.php';
+      exit;
+  }
+
+  if (
+      $page === 'reports'
+      && isset($_GET['pdf']) && $_GET['pdf'] === '1'
+  ) {
+      require __DIR__ . '/report_pdf_export.php';
       exit;
   }
 ?>
@@ -31,6 +44,7 @@
             <h4 class="text-white text-center py-2 mb-3">POS ADMIN</h4>
             <nav class="nav flex-column">
                 <a href="dashboard.php?page=home" class="nav-link <?= $page == 'home' ? 'active' : '' ?>">Dashboard</a>
+                <?php if($_SESSION['role'] === 'admin'): ?>
                 <a href="dashboard.php?page=categories" class="nav-link <?= $page == 'categories' ? 'active' : '' ?>">Categories</a>
                 <a href="dashboard.php?page=products" class="nav-link <?= $page == 'products' ? 'active' : '' ?>">Products</a>
                 <a href="dashboard.php?page=purchases" class="nav-link <?= $page == 'purchases' ? 'active' : '' ?>">Purchases</a>
@@ -39,6 +53,7 @@
                 <a href="dashboard.php?page=payroll" class="nav-link <?= $page == 'payroll' ? 'active' : '' ?>">Payroll</a>
                 <a href="dashboard.php?page=reports" class="nav-link <?= $page == 'reports' ? 'active' : '' ?>">Reports</a>
                 <a href="dashboard.php?page=customers" class="nav-link <?= $page == 'customers' ? 'active' : '' ?>">Customers</a>
+                <?php endif; ?>
                 <a href="dashboard.php?page=pos" class="nav-link <?= $page == 'pos' ? 'active' : '' ?>">Billing</a>
                 <a href="../logout.php" class="nav-link mt-2">Logout</a>
             </nav>
@@ -64,6 +79,7 @@
                     <div class="offcanvas-body">
                         <nav class="nav flex-column">
                             <a href="dashboard.php?page=home" class="nav-link <?= $page == 'home' ? 'active' : '' ?>">Dashboard</a>
+                            <?php if($_SESSION['role'] === 'admin'): ?>
                             <a href="dashboard.php?page=categories" class="nav-link <?= $page == 'categories' ? 'active' : '' ?>">Categories</a>
                             <a href="dashboard.php?page=products" class="nav-link <?= $page == 'products' ? 'active' : '' ?>">Products</a>
                             <a href="dashboard.php?page=purchases" class="nav-link <?= $page == 'purchases' ? 'active' : '' ?>">Purchases</a>
@@ -72,6 +88,7 @@
                             <a href="dashboard.php?page=payroll" class="nav-link <?= $page == 'payroll' ? 'active' : '' ?>">Payroll</a>
                             <a href="dashboard.php?page=reports" class="nav-link <?= $page == 'reports' ? 'active' : '' ?>">Reports</a>
                             <a href="dashboard.php?page=customers" class="nav-link <?= $page == 'customers' ? 'active' : '' ?>">Customers</a>
+                            <?php endif; ?>
                             <a href="dashboard.php?page=pos" class="nav-link <?= $page == 'pos' ? 'active' : '' ?>">Billing</a>
                             <a href="../logout.php" class="nav-link mt-2">Logout</a>
                         </nav>

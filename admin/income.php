@@ -152,7 +152,6 @@ if(isset($_GET['view'])){
         <table class="table table-bordered table-hover align-middle mb-0 bg-white">
             <thead class="table-light text-muted small text-uppercase">
                 <tr>
-                    <th>Order ID</th>
                     <th>Date</th>
                     <th>Customer</th>
                     <th>Cashier</th>
@@ -164,7 +163,6 @@ if(isset($_GET['view'])){
             <tbody>
                 <?php foreach($orders as $o): ?>
                 <tr>
-                    <td><strong>#<?= $o['id'] ?></strong></td>
                     <td><small><?= htmlspecialchars(date('d M Y, h:i A', strtotime($o['created_at']))) ?></small></td>
                     <td><?= htmlspecialchars($o['customer_name'] ?? 'Walk-in') ?></td>
                     <td><span class="text-muted"><small><?= htmlspecialchars($o['cashier_name'] ?? 'System') ?></small></span></td>

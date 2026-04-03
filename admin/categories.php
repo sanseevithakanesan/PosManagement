@@ -76,7 +76,6 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll
         <table class="table table-bordered table-hover align-middle mb-0 bg-white">
             <thead class="table-light text-muted small text-uppercase">
                 <tr>
-                    <th style="width: 80px;">ID</th>
                     <th>Category Name</th>
                     <th class="text-center" style="width: 150px;">Action</th>
                 </tr>
@@ -84,7 +83,6 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll
             <tbody>
                 <?php foreach($categories as $c): ?>
                 <tr>
-                    <td><strong>#<?= $c['id'] ?></strong></td>
                     <td class="fw-semibold text-dark"><?= htmlspecialchars($c['name']) ?></td>
                     <td>
                         <div class="d-flex justify-content-center gap-2">

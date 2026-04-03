@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-session_start();
 require_once dirname(__DIR__) . '/includes/auth.php';
 require_once dirname(__DIR__) . '/database/db.php';
 require_once dirname(__DIR__) . '/includes/pdf_receipt.php';

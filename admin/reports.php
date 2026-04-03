@@ -57,10 +57,16 @@ $profit_class = $net_profit >= 0 ? 'text-success' : 'text-danger';
         <h3 class="mb-0 text-dark fw-bold">Reports & Analytics</h3>
         <p class="text-muted small mb-0">Generate financial reports based on a date range.</p>
     </div>
-    <button onclick="window.print()" class="btn btn-dark fw-bold shadow-sm btn-print">
-        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-        Print Report
-    </button>
+    <div class="d-flex gap-2">
+        <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1" class="btn btn-primary fw-bold shadow-sm d-flex align-items-center">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Download PDF
+        </a>
+        <button onclick="window.print()" class="btn btn-dark fw-bold shadow-sm btn-print d-flex align-items-center">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Print Report
+        </button>
+    </div>
 </div>
 
 <!-- DATE FILTER FORM -->

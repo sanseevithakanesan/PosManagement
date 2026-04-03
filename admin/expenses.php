@@ -192,7 +192,6 @@ $categories = ['Rent', 'Salaries', 'Utilities', 'Maintenance', 'Office Supplies'
         <table class="table table-bordered table-hover align-middle mb-0 bg-white">
             <thead class="table-light text-muted small text-uppercase">
                 <tr>
-                    <th>ID</th>
                     <th>Date</th>
                     <th>Category</th>
                     <th>Description</th>
@@ -203,7 +202,6 @@ $categories = ['Rent', 'Salaries', 'Utilities', 'Maintenance', 'Office Supplies'
             <tbody>
                 <?php foreach($expensesList as $ex): ?>
                 <tr>
-                    <td><strong>EX-<?= $ex['id'] ?></strong></td>
                     <td><small><?= htmlspecialchars(date('d F Y, H:i', strtotime($ex['expense_date']))) ?></small></td>
                     <td><span class="badge bg-secondary"><?= htmlspecialchars($ex['expense_category']) ?></span></td>
                     <td class="text-secondary"><?= htmlspecialchars($ex['description']) ?></td>

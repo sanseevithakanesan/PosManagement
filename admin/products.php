@@ -261,7 +261,6 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
                 <thead class="table-light">
                     <tr>
                         <th style="width:64px">Image</th>
-                        <th>ID</th>
                         <th>Name</th>
                         <th>Price</th>
                         <th>Stock</th>
@@ -298,7 +297,6 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
                             <img src="<?= htmlspecialchars(product_image_url($p['image_path'] ?? null)) ?>"
                                  alt="" width="48" height="48" class="rounded border" style="width:48px;height:48px;object-fit:cover;">
                         </td>
-                        <td><?= $p['id'] ?></td>
                         <td><?= htmlspecialchars($p['name']) ?></td>
                         <td>Rs. <?= number_format($p['price'], 2) ?></td>
                         <td class="<?= $stockClass ?>">

@@ -118,7 +118,7 @@ try {
         $insItem->execute([$orderId, $ln['product_id'], $ln['qty'], $ln['unit_effective']]);
         $updStock->execute([$ln['qty'], $ln['product_id'], $ln['qty']]);
         if ($updStock->rowCount() === 0) {
-            throw new RuntimeException('stock');
+            throw new RuntimeException('stock_error');
         }
     }
 

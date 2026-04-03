@@ -6,6 +6,7 @@ if(isset($_POST['register'])){
     $name = $_POST['name'];
     $email = $_POST['email'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $role = $_POST['role'] ?? 'admin';
 
     // check email exists
     $check = $pdo->prepare("SELECT * FROM users WHERE email=?");
@@ -16,11 +17,11 @@ if(isset($_POST['register'])){
     } else {
 
         $stmt = $pdo->prepare("
-            INSERT INTO users(name,email,password)
-            VALUES(?,?,?)
+            INSERT INTO users(name,email,password,role)
+            VALUES(?,?,?,?)
         ");
 
-        $stmt->execute([$name,$email,$password]);
+        $stmt->execute([$name,$email,$password,$role]);
 
         header("Location: index.php?success=1");
         exit;
@@ -55,6 +56,12 @@ if(isset($_POST['register'])){
         <input type="text" name="name" class="form-control form-control-lg mt-2" placeholder="Full name" required>
 
         <input type="email" name="email" class="form-control form-control-lg mt-2" placeholder="Email address" required>
+
+        <select name="role" class="form-select form-control-lg mt-2" required>
+            <option value="" disabled selected>Select Role</option>
+            <option value="admin">Admin</option>
+            <option value="cashier">Cashier</option>
+        </select>
 
         <input type="password" name="password" class="form-control form-control-lg mt-2" placeholder="Password" required>
 

@@ -134,7 +134,6 @@ $customers = $pdo->query("SELECT * FROM customers ORDER BY id DESC")->fetchAll()
         <table class="table table-bordered table-hover align-middle mb-0 bg-white">
             <thead class="table-light text-muted small text-uppercase">
                 <tr>
-                    <th>ID</th>
                     <th>Name</th>
                     <th>Phone</th>
                     <th>Email</th>
@@ -145,7 +144,6 @@ $customers = $pdo->query("SELECT * FROM customers ORDER BY id DESC")->fetchAll()
             <tbody>
                 <?php foreach($customers as $c): ?>
                 <tr>
-                    <td><strong>#<?= $c['id'] ?></strong></td>
                     <td class="text-dark fw-bold"><?= htmlspecialchars($c['name']) ?></td>
                     <td><?= htmlspecialchars($c['phone']) ?></td>
                     <td class="text-muted"><?= htmlspecialchars($c['email'] ?: 'N/A') ?></td>
