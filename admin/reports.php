@@ -58,10 +58,6 @@ $profit_class = $net_profit >= 0 ? 'text-success' : 'text-danger';
         <p class="text-muted small mb-0">Generate financial reports based on a date range.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1" class="btn btn-primary fw-bold shadow-sm d-flex align-items-center">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Download PDF
-        </a>
         <button onclick="window.print()" class="btn btn-dark fw-bold shadow-sm btn-print d-flex align-items-center">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
             Print Report
@@ -106,28 +102,48 @@ $profit_class = $net_profit >= 0 ? 'text-success' : 'text-danger';
     <!-- Revenue -->
     <div class="col-12 col-md-6 col-lg-3">
         <div class="card bg-white p-3 border-0 shadow-sm border-start border-4 border-primary h-100">
-            <h6 class="text-muted small mb-2 text-uppercase fw-bold">Total Sales Income</h6>
+            <div class="d-flex justify-content-between align-items-start">
+                <h6 class="text-muted small mb-2 text-uppercase fw-bold">Total Sales Income</h6>
+                <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=income" class="text-primary print-hide" title="Download Income PDF">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </a>
+            </div>
             <h3 class="text-primary mb-0 fw-bold">Rs. <?= number_format($total_income, 2) ?></h3>
         </div>
     </div>
     <!-- Purchases -->
     <div class="col-12 col-md-6 col-lg-3">
         <div class="card bg-white p-3 border-0 shadow-sm border-start border-4 border-warning h-100">
-            <h6 class="text-muted small mb-2 text-uppercase fw-bold">Cost of Goods (Purchases)</h6>
+            <div class="d-flex justify-content-between align-items-start">
+                <h6 class="text-muted small mb-2 text-uppercase fw-bold">Cost of Goods (Purchases)</h6>
+                <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=purchase" class="text-warning print-hide" title="Download Purchase PDF">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </a>
+            </div>
             <h3 class="text-warning mb-0 fw-bold">Rs. <?= number_format($total_purchases, 2) ?></h3>
         </div>
     </div>
     <!-- Expenses -->
     <div class="col-12 col-md-6 col-lg-3">
         <div class="card bg-white p-3 border-0 shadow-sm border-start border-4 border-danger h-100">
-            <h6 class="text-muted small mb-2 text-uppercase fw-bold">Operating Expenses</h6>
+            <div class="d-flex justify-content-between align-items-start">
+                <h6 class="text-muted small mb-2 text-uppercase fw-bold">Operating Expenses</h6>
+                <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=expense" class="text-danger print-hide" title="Download Expense PDF">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </a>
+            </div>
             <h3 class="text-danger mb-0 fw-bold">Rs. <?= number_format($total_expenses, 2) ?></h3>
         </div>
     </div>
     <!-- Payroll -->
     <div class="col-12 col-md-6 col-lg-3">
         <div class="card bg-white p-3 border-0 shadow-sm border-start border-4 border-info h-100">
-            <h6 class="text-muted small mb-2 text-uppercase fw-bold">Payroll Salaries</h6>
+            <div class="d-flex justify-content-between align-items-start">
+                <h6 class="text-muted small mb-2 text-uppercase fw-bold">Payroll Salaries</h6>
+                <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=payroll" class="text-info print-hide" title="Download Payroll PDF">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </a>
+            </div>
             <h3 class="text-info mb-0 fw-bold">Rs. <?= number_format($total_payroll, 2) ?></h3>
         </div>
     </div>

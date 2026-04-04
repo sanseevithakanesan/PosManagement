@@ -157,6 +157,21 @@ if(isset($_POST['process_salary'])){
 $employees = $pdo->query("SELECT * FROM employees ORDER BY id DESC")->fetchAll();
 $activeEmployees = array_filter($employees, fn($e) => $e['status'] === 'Active');
 
+// Date filtering for payroll history
+$start_date = $_GET['start'] ?? '';
+$end_date = $_GET['end'] ?? '';
+
+$sqlPayments = "SELECT p.*, e.name as emp_name FROM salary_payments p JOIN employees e ON p.employee_id = e.id";
+$paramsPay = [];
+if ($start_date !== '' && $end_date !== '') {
+    $sqlPayments .= " WHERE DATE(p.payment_date) >= ? AND DATE(p.payment_date) <= ?";
+    $paramsPay[] = $start_date;
+    $paramsPay[] = $end_date;
+}
+$sqlPayments .= " ORDER BY p.id DESC";
+$stmtPay = $pdo->prepare($sqlPayments);
+$stmtPay->execute($paramsPay);
+$payments = $stmtPay->fetchAll();
 ?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -367,7 +382,22 @@ $activeEmployees = array_filter($employees, fn($e) => $e['status'] === 'Active')
 </div>
 
 <div class="card content-card p-3 shadow-sm border-0">
-    <h6 class="text-muted">Salary History</h6>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="text-muted mb-0">Salary History</h6>
+        <form method="GET" class="d-flex gap-2 align-items-center print-hide">
+            <input type="hidden" name="page" value="payroll">
+            <input type="hidden" name="tab" value="process">
+            <input type="date" name="start" class="form-control form-control-sm border-success" value="<?= htmlspecialchars($start_date) ?>" style="width: 140px;">
+            <span class="small text-muted">-</span>
+            <input type="date" name="end" class="form-control form-control-sm border-success" value="<?= htmlspecialchars($end_date) ?>" style="width: 140px;">
+            <button class="btn btn-success btn-sm fw-bold">Filter</button>
+            <a href="dashboard.php?page=payroll&tab=process" class="btn btn-outline-secondary btn-sm">Clear</a>
+            <a href="dashboard.php?page=reports&pdf=1&type=payroll&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>" class="btn btn-dark btn-sm fw-bold shadow-sm d-flex align-items-center">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                PDF
+            </a>
+        </form>
+    </div>
     <div class="table-responsive">
         <table class="table table-bordered align-middle mb-0 bg-white">
             <thead class="table-light text-muted small">

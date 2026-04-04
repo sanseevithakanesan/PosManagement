@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : ven. 03 avr. 2026 à 18:12
+-- Généré le : sam. 04 avr. 2026 à 07:57
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -124,8 +124,8 @@ CREATE TABLE `expenses` (
 --
 
 INSERT INTO `expenses` (`id`, `expense_category`, `description`, `amount`, `expense_date`) VALUES
-(4, 'Office Supplies', 'office purpose', 6000.00, '2026-04-03 15:55:58'),
-(5, 'Salaries', 'Salary payout for sansee (2026-04)', 50000.00, '2026-04-03 15:57:41');
+(5, 'Utilities', 'Salary payout for sansee (2026-04)', 50000.00, '2026-04-03 15:57:41'),
+(6, 'Salaries', 'Salary payout for sansee (2026-04)', 100000.00, '2026-04-04 03:57:54');
 
 -- --------------------------------------------------------
 
@@ -218,7 +218,7 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `category_id`, `name`, `title`, `description`, `price`, `cost_price`, `stock`, `reorder_level`, `barcode`, `sku`, `created_at`, `deleted_at`) VALUES
-(17, 11, 'dairy milks', 'milkys', 'chocoss', 1600.00, 1236.04, 6, 5, '895423075977', 'SKU-17', '2026-04-03 15:47:23', NULL);
+(17, 11, 'dairy milks', 'milkys', 'chocoss', 1800.00, 1236.04, 10, 5, '895423075977', 'SKU-17', '2026-04-03 15:47:23', NULL);
 
 -- --------------------------------------------------------
 
@@ -280,8 +280,8 @@ CREATE TABLE `purchases` (
 --
 
 INSERT INTO `purchases` (`id`, `reference_no`, `supplier`, `product_id`, `quantity`, `unit_cost`, `total_cost`, `status`, `payment_status`, `purchase_date`, `invoice_no`, `buy_price`, `selling_price`, `remaining_qty`, `discount`, `tax`, `final_amount`, `expiry_date`, `batch_no`, `payment_method`, `paid_amount`, `due_amount`, `user_id`, `updated_at`) VALUES
-(9, 'PUR-1775231465', 'sanja', 17, 2, 1236.04, 2472.08, 'Received', 'Partial', '2026-04-03 21:21:05', '005', 1236.04, 1500.00, 2, 0.00, 0.00, 2472.08, '2026-04-02', '125', 'Card', 0.03, 2472.05, 1, '2026-04-03 15:53:39'),
-(10, 'PUR-1775232318', 'test-01dfdf', 17, 1, 1236.04, 1236.04, 'Received', 'Paid', '2026-04-03 21:35:18', '', 1236.04, 1600.00, 1, 0.00, 0.00, 1236.04, NULL, '', 'Card', 1700.00, -463.96, 1, '2026-04-03 16:07:51');
+(10, 'PUR-1775232318', 'test-01dfdf', 17, 1, 1236.04, 1236.04, 'Received', 'Paid', '2026-04-03 21:35:18', '', 1236.04, 1600.00, 1, 0.03, 0.03, 1236.04, NULL, '', 'Card', 1700.00, -463.96, 1, '2026-04-04 05:25:18'),
+(11, '12345677', 'supplier23', 17, 6, 1236.04, 7416.24, 'Received', 'Partial', '2026-04-04 11:18:59', 'inv-004', 1236.04, 1800.00, 6, 0.00, 0.00, 7416.24, '2026-04-28', '125', 'Online', 400.00, 7016.24, 1, '2026-04-04 05:48:59');
 
 -- --------------------------------------------------------
 
@@ -325,7 +325,8 @@ CREATE TABLE `salary_payments` (
 --
 
 INSERT INTO `salary_payments` (`id`, `employee_id`, `pay_month`, `base_amount`, `advances_deducted`, `net_paid`, `payment_date`) VALUES
-(2, 5, '2026-04', 100000.00, 50000.00, 50000.00, '2026-04-03 15:57:41');
+(2, 5, '2026-04', 100000.00, 50000.00, 50000.00, '2026-04-03 15:57:41'),
+(3, 5, '2026-04', 100000.00, 0.00, 100000.00, '2026-04-04 03:57:54');
 
 -- --------------------------------------------------------
 
@@ -504,7 +505,7 @@ ALTER TABLE `employees`
 -- AUTO_INCREMENT pour la table `expenses`
 --
 ALTER TABLE `expenses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT pour la table `orders`
@@ -540,7 +541,7 @@ ALTER TABLE `product_images`
 -- AUTO_INCREMENT pour la table `purchases`
 --
 ALTER TABLE `purchases`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT pour la table `salary_advances`
@@ -552,7 +553,7 @@ ALTER TABLE `salary_advances`
 -- AUTO_INCREMENT pour la table `salary_payments`
 --
 ALTER TABLE `salary_payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pour la table `stock_logs`

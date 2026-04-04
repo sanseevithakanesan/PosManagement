@@ -219,13 +219,26 @@ if(isset($_POST['update'])){
 }
 
 /* LIST */
-$purchases = $pdo->query("
+$start_date = $_GET['start'] ?? '';
+$end_date = $_GET['end'] ?? '';
+
+$sqlPurch = "
     SELECT p.*, pr.name as product_name, cat.name as category_name
     FROM purchases p 
     LEFT JOIN products pr ON p.product_id = pr.id
     LEFT JOIN categories cat ON pr.category_id = cat.id
-    ORDER BY p.id DESC
-")->fetchAll();
+";
+$paramsPurch = [];
+if ($start_date !== '' && $end_date !== '') {
+    $sqlPurch .= " WHERE DATE(p.purchase_date) >= ? AND DATE(p.purchase_date) <= ?";
+    $paramsPurch[] = $start_date;
+    $paramsPurch[] = $end_date;
+}
+$sqlPurch .= " ORDER BY p.id DESC";
+
+$stmtPurch = $pdo->prepare($sqlPurch);
+$stmtPurch->execute($paramsPurch);
+$purchases = $stmtPurch->fetchAll();
 ?>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -398,6 +411,21 @@ $purchases = $pdo->query("
 
 <!-- DATA TABLE -->
 <div class="card content-card p-3 shadow-sm border-0">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="text-muted mb-0">Record List</h6>
+        <form method="GET" class="d-flex gap-2 align-items-center print-hide">
+            <input type="hidden" name="page" value="purchases">
+            <input type="date" name="start" class="form-control form-control-sm border-primary" value="<?= htmlspecialchars($start_date) ?>" style="width: 140px;">
+            <span class="small text-muted">-</span>
+            <input type="date" name="end" class="form-control form-control-sm border-primary" value="<?= htmlspecialchars($end_date) ?>" style="width: 140px;">
+            <button class="btn btn-primary btn-sm fw-bold">Filter</button>
+            <a href="dashboard.php?page=purchases" class="btn btn-outline-secondary btn-sm">Clear</a>
+            <a href="dashboard.php?page=reports&pdf=1&type=purchase&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>" class="btn btn-dark btn-sm fw-bold shadow-sm d-flex align-items-center">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                PDF
+            </a>
+        </form>
+    </div>
 <div class="table-responsive">
 <table class="table table-bordered table-hover align-middle mb-0 bg-white">
 <thead class="table-light text-muted small text-uppercase">

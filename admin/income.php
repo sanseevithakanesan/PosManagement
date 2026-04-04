@@ -142,6 +142,10 @@ if(isset($_GET['view'])){
         <div class="col-auto">
             <button class="btn btn-primary btn-sm fw-bold">Filter</button>
             <a href="dashboard.php?page=income" class="btn btn-outline-secondary btn-sm">Clear</a>
+            <a href="dashboard.php?page=reports&pdf=1&type=income&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>" class="btn btn-dark btn-sm fw-bold ms-2 shadow-sm d-inline-flex align-items-center">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download PDF
+            </a>
         </div>
     </form>
 </div>
