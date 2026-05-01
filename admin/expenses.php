@@ -79,14 +79,89 @@ $expensesList = $stmtExp->fetchAll();
 $categories = ['Rent', 'Salaries', 'Utilities', 'Maintenance', 'Office Supplies', 'Marketing', 'Taxes', 'Miscellaneous'];
 ?>
 
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-    <h3 class="mb-0">Operating Expenses</h3>
-    <a href="dashboard.php?page=expenses" class="btn btn-outline-primary <?= $edit ? '' : 'd-none' ?>">+ Log New Expense</a>
+
+<style>
+    /* Modern UI Components */
+    .expenses-header {
+        background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+        padding: 25px;
+        border-radius: 15px;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 20px rgba(214, 48, 49, 0.15);
+    }
+    .modern-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    
+    /* Metrics Upgrades */
+    .stats-card-modern {
+        padding: 24px;
+        border-radius: 16px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        border: none;
+    }
+    .stats-card-modern::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 150px;
+        height: 150px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+    .bg-gradient-danger { background: linear-gradient(135deg, #d63031 0%, #ff7675 100%); }
+    .bg-gradient-warning { background: linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%); color: #2d3436 !important; }
+    .bg-gradient-secondary { background: linear-gradient(135deg, #636e72 0%, #b2bec3 100%); }
+
+    /* Modern Table & Badges */
+    .cat-pill {
+        font-size: 0.7rem;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .action-circle-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        transition: all 0.2s;
+        border: none;
+        margin: 0 2px;
+    }
+    .btn-edit-exp { background: #eff6ff; color: #3b82f6; }
+    .btn-edit-exp:hover { background: #3b82f6; color: white; }
+    .btn-delete-exp { background: #fef2f2; color: #ef4444; }
+    .btn-delete-exp:hover { background: #ef4444; color: white; }
+</style>
+
+<div class="expenses-header d-flex justify-content-between align-items-center">
+    <div>
+        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-file-invoice-dollar me-2"></i> Operating Expenses</h3>
+        <p class="mb-0 opacity-75">Outflow Management and Cost Tracking</p>
+    </div>
+    <a href="dashboard.php?page=expenses" class="btn btn-light fw-bold px-4 <?= $edit ? '' : 'disabled opacity-50' ?>">
+        <i class="fa-solid fa-plus-circle me-1 text-danger"></i> Log New Expense
+    </a>
 </div>
 
 <!-- ALERT -->
 <?php if(isset($_SESSION['message'])): ?>
-    <div class="alert alert-<?= $_SESSION['message_type'] ?> alert-dismissible fade show" role="alert">
+    <div class="alert alert-<?= $_SESSION['message_type'] ?> alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="fa-solid <?= $_SESSION['message_type'] == 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle' ?> me-2"></i>
         <?= $_SESSION['message'] ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
@@ -94,130 +169,151 @@ $categories = ['Rent', 'Salaries', 'Utilities', 'Maintenance', 'Office Supplies'
 <?php endif; ?>
 
 <!-- METRICS -->
-<div class="row g-3 mb-4">
+<div class="row g-4 mb-5">
     <div class="col-12 col-md-4">
-        <div class="card bg-danger bg-opacity-75 text-white h-100 p-3 border-0 shadow-sm rounded-3">
-            <h6 class="opacity-75 mb-1 d-flex align-items-center gap-2">
-                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
-                Today's Spent
-            </h6>
-            <h3 class="mb-0">Rs <?= number_format((float)$todayExp, 2) ?></h3>
+        <div class="card stats-card-modern bg-gradient-danger shadow-sm h-100">
+            <div class="small fw-bold text-uppercase opacity-75 mb-1 text-white">Today's Spent</div>
+            <h2 class="mb-0 fw-bold">Rs <?= number_format((float)$todayExp, 2) ?></h2>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card bg-warning text-dark h-100 p-3 border-0 shadow-sm rounded-3">
-            <h6 class="opacity-75 mb-1 d-flex align-items-center gap-2">
-                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                This Month's Spent
-            </h6>
-            <h3 class="mb-0">Rs <?= number_format((float)$monthExp, 2) ?></h3>
+        <div class="card stats-card-modern bg-gradient-warning shadow-sm h-100">
+            <div class="small fw-bold text-uppercase opacity-75 mb-1">This Month's Spent</div>
+            <h2 class="mb-0 fw-bold">Rs <?= number_format((float)$monthExp, 2) ?></h2>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card bg-secondary text-white h-100 p-3 border-0 shadow-sm rounded-3">
-            <h6 class="opacity-75 mb-1 d-flex align-items-center gap-2">
-                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                All Time Expenses
-            </h6>
-            <h3 class="mb-0">Rs <?= number_format((float)$totalExp, 2) ?></h3>
+        <div class="card stats-card-modern bg-gradient-secondary shadow-sm h-100">
+            <div class="small fw-bold text-uppercase opacity-75 mb-1 text-white">All Time Total</div>
+            <h2 class="mb-0 fw-bold">Rs <?= number_format((float)$totalExp, 2) ?></h2>
         </div>
     </div>
 </div>
 
 <!-- FORM -->
-<div class="card content-card p-4 mb-4 shadow-sm border-0">
-    <h5 class="mb-3 text-secondary"><?= $edit ? 'Edit Expense Record' : 'Log New Expense' ?></h5>
-    <form method="POST">
-        <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
-        
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label text-muted small fw-bold">Amount (Rs) *</label>
-                <input type="number" step="0.01" name="amount" class="form-control" style="font-size: 1.1rem; font-weight:bold; color:var(--bs-danger);" value="<?= htmlspecialchars($edit['amount'] ?? '') ?>" placeholder="0.00" required>
-            </div>
+<div class="card modern-card mb-5">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-4 text-dark"><?= $edit ? '<i class="fa-solid fa-edit text-danger me-2"></i>Modify Expense Record' : '<i class="fa-solid fa-plus-circle text-danger me-2"></i>Log New Expenditure' ?></h5>
+        <form method="POST">
+            <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
             
-            <div class="col-md-3">
-                <label class="form-label text-muted small fw-bold">Category *</label>
-                <select name="expense_category" class="form-select border-danger" required>
-                    <option value="">Select Category...</option>
-                    <?php foreach($categories as $cat): ?>
-                        <option value="<?= $cat ?>" <?= (isset($edit['expense_category']) && $edit['expense_category'] === $cat) ? 'selected' : '' ?>><?= $cat ?></option>
-                    <?php endforeach; ?>
-                </select>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold">Amount (Rs) *</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light text-danger border-danger"><i class="fa-solid fa-coins"></i></span>
+                        <input type="number" step="0.01" name="amount" class="form-control fw-bold border-danger text-danger" value="<?= htmlspecialchars($edit['amount'] ?? '') ?>" placeholder="0.00" required>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold">Spend Category *</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-tags text-muted"></i></span>
+                        <select name="expense_category" class="form-select border-0 bg-light fw-semibold" required>
+                            <option value="">Select...</option>
+                            <?php foreach($categories as $cat): ?>
+                                <option value="<?= $cat ?>" <?= (isset($edit['expense_category']) && $edit['expense_category'] === $cat) ? 'selected' : '' ?>><?= $cat ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <label class="form-label text-muted small fw-bold">Purpose / Details *</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-quote-left text-muted opacity-50"></i></span>
+                        <input type="text" name="description" class="form-control border-0 bg-light" value="<?= htmlspecialchars($edit['description'] ?? '') ?>" placeholder="e.g., May Electricity Bill, Maintenance..." required>
+                    </div>
+                </div>
             </div>
-            
-            <div class="col-md-6">
-                <label class="form-label text-muted small fw-bold">Description / Purpose *</label>
-                <input type="text" name="description" class="form-control" value="<?= htmlspecialchars($edit['description'] ?? '') ?>" placeholder="e.g., Shop electricity bill for May, Staff bonus, etc." required>
-            </div>
-        </div>
 
-        <div class="mt-4 pt-3 border-top">
-            <button class="btn btn-danger px-4 fw-bold" name="save">
-                <?= $edit ? 'Save Changes' : 'Record Expense' ?>
-            </button>
-            <?php if($edit): ?>
-                <a href="dashboard.php?page=expenses" class="btn btn-light px-4 ms-2 text-dark border">Cancel</a>
-            <?php endif; ?>
-        </div>
-    </form>
+            <div class="mt-4 pt-3 d-flex gap-2">
+                <button class="btn btn-danger btn-lg px-5 fw-bold shadow" name="save">
+                    <?= $edit ? '<i class="fa-solid fa-save me-2"></i>Update Log' : '<i class="fa-solid fa-check-circle me-2"></i>Record Spend' ?>
+                </button>
+                <?php if($edit): ?>
+                    <a href="dashboard.php?page=expenses" class="btn btn-light btn-lg px-4 border">Cancel</a>
+                <?php endif; ?>
+            </div>
+        </form>
+    </div>
 </div>
 
+
 <!-- DATE FILTER FORM -->
-<div class="card content-card p-3 mb-4 shadow-sm border-0 bg-light">
-    <form method="GET" class="row g-2 align-items-center">
-        <input type="hidden" name="page" value="expenses">
-        <div class="col-auto">
-            <label class="form-label text-muted small fw-bold mb-0">From</label>
-        </div>
-        <div class="col-sm-3 col-md-2">
-            <input type="date" name="start" class="form-control form-control-sm border-danger" value="<?= htmlspecialchars($start_date) ?>">
-        </div>
-        <div class="col-auto">
-            <label class="form-label text-muted small fw-bold mb-0">To</label>
-        </div>
-        <div class="col-sm-3 col-md-2">
-            <input type="date" name="end" class="form-control form-control-sm border-danger" value="<?= htmlspecialchars($end_date) ?>">
-        </div>
-        <div class="col-auto">
-            <button class="btn btn-danger btn-sm fw-bold">Filter</button>
-            <a href="dashboard.php?page=expenses" class="btn btn-outline-secondary btn-sm">Clear</a>
-            <a href="dashboard.php?page=reports&pdf=1&type=expense&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>" class="btn btn-dark btn-sm fw-bold ms-2 shadow-sm d-inline-flex align-items-center">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Download PDF
-            </a>
-        </div>
-    </form>
+<div class="card modern-card mb-4 bg-white">
+    <div class="card-body p-3">
+        <form method="GET" class="row g-3 align-items-center">
+            <input type="hidden" name="page" value="expenses">
+            <div class="col-auto">
+                <span class="text-muted small fw-bold"><i class="fa-solid fa-filter me-1"></i> PERIOD:</span>
+            </div>
+            <div class="col-md-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-0"><i class="fa-solid fa-calendar"></i></span>
+                    <input type="date" name="start" class="form-control border-light" value="<?= htmlspecialchars($start_date) ?>">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-0"><i class="fa-solid fa-arrow-right-long"></i></span>
+                    <input type="date" name="end" class="form-control border-light" value="<?= htmlspecialchars($end_date) ?>">
+                </div>
+            </div>
+            <div class="col-auto d-flex gap-2">
+                <button class="btn btn-danger btn-sm fw-bold px-3 shadow-sm">Filter Results</button>
+                <a href="dashboard.php?page=expenses" class="btn btn-light btn-sm px-3 border-0">Clear</a>
+                <a href="dashboard.php?page=reports&pdf=1&type=expense&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>" class="btn btn-dark btn-sm fw-bold px-3 shadow-sm">
+                    <i class="fa-solid fa-file-pdf me-1"></i> Export PDF
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- LIST -->
-<div class="card content-card p-3 shadow-sm border-0">
+<div class="card modern-card overflow-hidden">
+    <div class="card-header bg-white py-3 border-0">
+        <h6 class="mb-0 fw-bold text-muted text-uppercase small">Expenditure History</h6>
+    </div>
     <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle mb-0 bg-white">
-            <thead class="table-light text-muted small text-uppercase">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-muted small text-uppercase">
                 <tr>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Description</th>
+                    <th class="ps-4">Logged Date</th>
+                    <th>Spend Category</th>
+                    <th>Purpose / Details</th>
                     <th class="text-end">Amount</th>
-                    <th class="text-center">Action</th>
+                    <th class="text-end pe-4">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach($expensesList as $ex): ?>
                 <tr>
-                    <td><small><?= htmlspecialchars(date('d F Y, H:i', strtotime($ex['expense_date']))) ?></small></td>
-                    <td><span class="badge bg-secondary"><?= htmlspecialchars($ex['expense_category']) ?></span></td>
-                    <td class="text-secondary"><?= htmlspecialchars($ex['description']) ?></td>
+                    <td class="ps-4">
+                        <div class="fw-bold text-dark"><?= htmlspecialchars(date('d M Y', strtotime($ex['expense_date']))) ?></div>
+                        <div class="small text-muted"><?= date('h:i A', strtotime($ex['expense_date'])) ?></div>
+                    </td>
+                    <td><span class="cat-pill"><?= htmlspecialchars($ex['expense_category']) ?></span></td>
+                    <td class="text-dark fw-medium"><?= htmlspecialchars($ex['description']) ?></td>
                     <td class="text-end fw-bold text-danger">Rs. <?= number_format($ex['amount'], 2) ?></td>
-                    <td class="text-center">
-                        <a href="dashboard.php?page=expenses&edit=<?= $ex['id'] ?>" class="btn btn-sm btn-outline-primary me-1">Edit</a>
-                        <a href="dashboard.php?page=expenses&delete=<?= $ex['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this expense?');">Del</a>
+                    <td class="text-end pe-4">
+                        <a href="dashboard.php?page=expenses&edit=<?= $ex['id'] ?>" class="action-circle-btn btn-edit-exp" title="Edit Entry">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        <a href="dashboard.php?page=expenses&delete=<?= $ex['id'] ?>" class="action-circle-btn btn-delete-exp" 
+                           onclick="return confirm('Permanently delete this expense log?')" title="Delete Entry">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
                 <?php if(empty($expensesList)): ?>
-                    <tr><td colspan="6" class="text-center text-muted py-4">No expenses logged yet.</td></tr>
+                    <tr><td colspan="5" class="text-center text-muted py-5">
+                        <i class="fa-solid fa-receipt fs-1 opacity-25 mb-3 d-block"></i>
+                        No expenditure records found for this period.
+                    </td></tr>
                 <?php endif; ?>
             </tbody>
         </table>

@@ -40,52 +40,128 @@ $profit_class = $net_profit >= 0 ? 'text-success' : 'text-danger';
 
 ?>
 
+
 <style>
-@media print {
-    /* Hide navigation and non-essential elements for printing */
-    body { background-color: white !important; }
-    .admin-sidebar, .topbar-glass, .print-hide, .btn-print, .offcanvas { display: none !important; }
-    .col-lg-10 { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
-    main { padding: 0 !important; }
-    .card { border: none !important; box-shadow: none !important; }
-    .page-break { page-break-before: always; }
-}
+    /* Modern UI Components */
+    .reports-header {
+        background: linear-gradient(135deg, #4834d4 0%, #686de0 100%);
+        padding: 25px;
+        border-radius: 15px;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 20px rgba(72, 52, 212, 0.15);
+    }
+    .modern-card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    
+    /* Metrics Upgrades */
+    .report-stat-card {
+        padding: 24px;
+        border-radius: 16px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        border: none;
+    }
+    .report-stat-card::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 150px;
+        height: 150px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+    }
+    .bg-grad-blue { background: linear-gradient(135deg, #4834d4 0%, #686de0 100%); }
+    .bg-grad-orange { background: linear-gradient(135deg, #f0932b 0%, #ffbe76 100%); }
+    .bg-grad-red { background: linear-gradient(135deg, #eb4d4b 0%, #ff7979 100%); }
+    .bg-grad-teal { background: linear-gradient(135deg, #22a6b3 0%, #7ed6df 100%); }
+
+    /* Statement Styling */
+    .statement-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    .statement-row {
+        padding: 15px 0;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+    .statement-row:last-child { border-bottom: none; }
+    
+    .export-trigger {
+        width: 30px;
+        height: 30px;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        float: right;
+        transition: all 0.2s;
+    }
+    .export-trigger:hover { background: white; color: black; transform: translateY(-2px); }
+
+    @media print {
+        /* Hide navigation and non-essential elements for printing */
+        body { background-color: white !important; }
+        .admin-sidebar, .topbar-glass, .print-hide, .btn-print, .offcanvas { display: none !important; }
+        .col-lg-10 { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+        main { padding: 0 !important; }
+        .card { border: none !important; box-shadow: none !important; }
+        .modern-card { box-shadow: none !important; border: 1px solid #eee !important; }
+        .page-break { page-break-before: always; }
+        .reports-header { background: #eee !important; color: black !important; border: 1px solid #ccc; box-shadow: none; }
+    }
 </style>
 
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 print-hide">
+<div class="reports-header d-flex justify-content-between align-items-center print-hide">
     <div>
-        <h3 class="mb-0 text-dark fw-bold">Reports & Analytics</h3>
-        <p class="text-muted small mb-0">Generate financial reports based on a date range.</p>
+        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-chart-line me-2"></i> Reports & Analytics</h3>
+        <p class="mb-0 opacity-75">Business Intelligence and Financial Performance Tracking</p>
     </div>
     <div class="d-flex gap-2">
-        <button onclick="window.print()" class="btn btn-dark fw-bold shadow-sm btn-print d-flex align-items-center">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-            Print Report
+        <button onclick="window.print()" class="btn btn-light fw-bold px-4 shadow-sm">
+            <i class="fa-solid fa-print me-2 text-dark"></i> Print Full Report
         </button>
     </div>
 </div>
 
+
 <!-- DATE FILTER FORM -->
-<div class="card content-card p-4 mb-4 shadow-sm border-0 print-hide">
-    <form method="GET" class="row g-3 align-items-end">
-        <input type="hidden" name="page" value="reports">
-        <div class="col-md-3">
-            <label class="form-label text-muted small fw-bold">Start Date</label>
-            <input type="date" name="start" class="form-control border-primary" value="<?= htmlspecialchars($start_date) ?>" required>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label text-muted small fw-bold">End Date</label>
-            <input type="date" name="end" class="form-control border-primary" value="<?= htmlspecialchars($end_date) ?>" required>
-        </div>
-        <div class="col-md-3">
-            <button class="btn btn-primary w-100 fw-bold">Generate Report</button>
-        </div>
-        <div class="col-md-3 text-end">
-            <a href="dashboard.php?page=reports&start=<?= date('Y-m-d') ?>&end=<?= date('Y-m-d') ?>" class="btn btn-outline-secondary btn-sm">Today</a>
-            <a href="dashboard.php?page=reports&start=<?= date('Y-m-01') ?>&end=<?= date('Y-m-t') ?>" class="btn btn-outline-secondary btn-sm">This Month</a>
-            <a href="dashboard.php?page=reports&start=<?= date('Y-01-01') ?>&end=<?= date('Y-12-31') ?>" class="btn btn-outline-secondary btn-sm">This Year</a>
-        </div>
-    </form>
+<div class="card modern-card mb-5 print-hide">
+    <div class="card-body p-4">
+        <form method="GET" class="row g-4 align-items-end">
+            <input type="hidden" name="page" value="reports">
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold">Reporting From *</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="fa-solid fa-calendar-day text-primary"></i></span>
+                    <input type="date" name="start" class="form-control border-light" value="<?= htmlspecialchars($start_date) ?>" required>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small fw-bold">Reporting To *</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="fa-solid fa-calendar-check text-primary"></i></span>
+                    <input type="date" name="end" class="form-control border-light" value="<?= htmlspecialchars($end_date) ?>" required>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm"><i class="fa-solid fa-sync me-2"></i>Generate Analytics</button>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <a href="dashboard.php?page=reports&start=<?= date('Y-m-d') ?>&end=<?= date('Y-m-d') ?>" class="btn btn-light border-0 flex-grow-1 fw-bold text-muted small">Today</a>
+                <a href="dashboard.php?page=reports&start=<?= date('Y-m-01') ?>&end=<?= date('Y-m-t') ?>" class="btn btn-light border-0 flex-grow-1 fw-bold text-muted small">This Month</a>
+                <a href="dashboard.php?page=reports&start=<?= date('Y-01-01') ?>&end=<?= date('Y-12-31') ?>" class="btn btn-light border-0 flex-grow-1 fw-bold text-muted small">This Year</a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- PRINT HEADER (ONLY VISIBLE ON PRINT) -->
@@ -95,102 +171,115 @@ $profit_class = $net_profit >= 0 ? 'text-success' : 'text-danger';
     <hr>
 </div>
 
-<h5 class="text-dark fw-bold mb-3 d-print-block">Financial Period Summaries <span class="text-muted fs-6 fw-normal">(<?= date('d M Y', strtotime($start_date)) ?> - <?= date('d M Y', strtotime($end_date)) ?>)</span></h5>
+
+<h5 class="text-dark fw-bold mb-4 d-print-block"><i class="fa-solid fa-folder-open text-primary me-2"></i> Financial Summaries <span class="text-muted fs-6 fw-normal">(<?= date('d M Y', strtotime($start_date)) ?> - <?= date('d M Y', strtotime($end_date)) ?>)</span></h5>
 
 <!-- METRICS HIGHLIGHTS -->
-<div class="row g-3 mb-4">
+<div class="row g-4 mb-5">
     <!-- Revenue -->
     <div class="col-12 col-md-6 col-lg-3">
-        <div class="card bg-white p-3 border-0 shadow-sm border-start border-4 border-primary h-100">
-            <div class="d-flex justify-content-between align-items-start">
-                <h6 class="text-muted small mb-2 text-uppercase fw-bold">Total Sales Income</h6>
-                <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=income" class="text-primary print-hide" title="Download Income PDF">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                </a>
-            </div>
-            <h3 class="text-primary mb-0 fw-bold">Rs. <?= number_format($total_income, 2) ?></h3>
+        <div class="card report-stat-card bg-grad-blue shadow-sm h-100">
+            <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=income" class="export-trigger print-hide" title="Export PDF">
+                <i class="fa-solid fa-file-pdf"></i>
+            </a>
+            <div class="small fw-bold text-uppercase opacity-75 mb-1">Total Sales Income</div>
+            <h2 class="mb-0 fw-bold">Rs. <?= number_format($total_income, 2) ?></h2>
         </div>
     </div>
     <!-- Purchases -->
     <div class="col-12 col-md-6 col-lg-3">
-        <div class="card bg-white p-3 border-0 shadow-sm border-start border-4 border-warning h-100">
-            <div class="d-flex justify-content-between align-items-start">
-                <h6 class="text-muted small mb-2 text-uppercase fw-bold">Cost of Goods (Purchases)</h6>
-                <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=purchase" class="text-warning print-hide" title="Download Purchase PDF">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                </a>
-            </div>
-            <h3 class="text-warning mb-0 fw-bold">Rs. <?= number_format($total_purchases, 2) ?></h3>
+        <div class="card report-stat-card bg-grad-orange shadow-sm h-100">
+            <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=purchase" class="export-trigger print-hide" title="Export PDF">
+                <i class="fa-solid fa-file-pdf"></i>
+            </a>
+            <div class="small fw-bold text-uppercase opacity-75 mb-1">Cost of Goods</div>
+            <h2 class="mb-0 fw-bold">Rs. <?= number_format($total_purchases, 2) ?></h2>
         </div>
     </div>
     <!-- Expenses -->
     <div class="col-12 col-md-6 col-lg-3">
-        <div class="card bg-white p-3 border-0 shadow-sm border-start border-4 border-danger h-100">
-            <div class="d-flex justify-content-between align-items-start">
-                <h6 class="text-muted small mb-2 text-uppercase fw-bold">Operating Expenses</h6>
-                <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=expense" class="text-danger print-hide" title="Download Expense PDF">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                </a>
-            </div>
-            <h3 class="text-danger mb-0 fw-bold">Rs. <?= number_format($total_expenses, 2) ?></h3>
+        <div class="card report-stat-card bg-grad-red shadow-sm h-100">
+            <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=expense" class="export-trigger print-hide" title="Export PDF">
+                <i class="fa-solid fa-file-pdf"></i>
+            </a>
+            <div class="small fw-bold text-uppercase opacity-75 mb-1">Operating Expenses</div>
+            <h2 class="mb-0 fw-bold">Rs. <?= number_format($total_expenses, 2) ?></h2>
         </div>
     </div>
     <!-- Payroll -->
     <div class="col-12 col-md-6 col-lg-3">
-        <div class="card bg-white p-3 border-0 shadow-sm border-start border-4 border-info h-100">
-            <div class="d-flex justify-content-between align-items-start">
-                <h6 class="text-muted small mb-2 text-uppercase fw-bold">Payroll Salaries</h6>
-                <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=payroll" class="text-info print-hide" title="Download Payroll PDF">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                </a>
-            </div>
-            <h3 class="text-info mb-0 fw-bold">Rs. <?= number_format($total_payroll, 2) ?></h3>
+        <div class="card report-stat-card bg-grad-teal shadow-sm h-100">
+            <a href="dashboard.php?page=reports&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>&pdf=1&type=payroll" class="export-trigger print-hide" title="Export PDF">
+                <i class="fa-solid fa-file-pdf"></i>
+            </a>
+            <div class="small fw-bold text-uppercase opacity-75 mb-1">Payroll Salaries</div>
+            <h2 class="mb-0 fw-bold">Rs. <?= number_format($total_payroll, 2) ?></h2>
         </div>
     </div>
 </div>
+
 
 <!-- PROFIT AND LOSS MASTER SUMMARY -->
-<div class="card content-card p-0 mb-4 shadow-sm border-0 overflow-hidden">
-    <div class="bg-dark text-white p-3">
-        <h5 class="mb-0">Profit & Loss (P&L) Statement</h5>
+<div class="card modern-card mb-5 overflow-hidden">
+    <div class="bg-dark text-white p-4 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-receipt me-2 text-warning"></i> Profit & Loss (P&L) Statement</h5>
+        <div class="small fw-bold opacity-75">ACCRUAL BASIS SUMMARY</div>
     </div>
-    <div class="p-4">
-        <table class="table table-borderless mx-auto" style="max-width: 600px; font-size: 1.1rem;">
-            <tbody>
-                <tr class="border-bottom">
-                    <td class="text-muted fw-bold">Gross Sales Revenue:</td>
-                    <td class="text-end text-primary fw-bold">Rs. <?= number_format($total_income, 2) ?></td>
-                </tr>
-                <tr>
-                    <td class="text-muted ps-4">(-) Inventory Purchases (Received):</td>
-                    <td class="text-end text-danger">- Rs. <?= number_format($total_purchases, 2) ?></td>
-                </tr>
-                <tr>
-                    <td class="text-muted ps-4">(-) General Expenses:</td>
-                    <td class="text-end text-danger">- Rs. <?= number_format($total_expenses, 2) ?></td>
-                </tr>
-                <tr class="border-bottom">
-                    <td class="text-muted ps-4">(-) Total Payroll Paid:</td>
-                    <td class="text-end text-danger">- Rs. <?= number_format($total_payroll, 2) ?></td>
-                </tr>
-                <tr class="table-light">
-                    <td class="fw-bold fs-5 pt-3">NET PROFIT / LOSS</td>
-                    <td class="text-end fw-bold fs-4 pt-3 <?= $profit_class ?>">Rs. <?= number_format($net_profit, 2) ?></td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="p-5 bg-white">
+        <div class="mx-auto" style="max-width: 700px;">
+            <div class="statement-row d-flex justify-content-between align-items-center">
+                <div class="fw-bold text-muted text-uppercase small">Statement Item</div>
+                <div class="fw-bold text-muted text-uppercase small">Amount (LKR)</div>
+            </div>
+            
+            <div class="statement-row d-flex justify-content-between align-items-center">
+                <div class="text-dark fw-bold"><i class="fa-solid fa-circle-plus text-success me-2 opacity-50"></i>Gross Sales Revenue</div>
+                <div class="text-primary fw-bold fs-5">Rs. <?= number_format($total_income, 2) ?></div>
+            </div>
+            
+            <div class="ps-4">
+                <div class="statement-row d-flex justify-content-between align-items-center bg-light bg-opacity-50 px-3 rounded">
+                    <div class="text-muted"><i class="fa-solid fa-minus me-2 opacity-50"></i>Inventory Purchases (Received)</div>
+                    <div class="text-danger fw-semibold">- Rs. <?= number_format($total_purchases, 2) ?></div>
+                </div>
+                <div class="statement-row d-flex justify-content-between align-items-center bg-light bg-opacity-50 px-3 rounded">
+                    <div class="text-muted"><i class="fa-solid fa-minus me-2 opacity-50"></i>General Operations Expenses</div>
+                    <div class="text-danger fw-semibold">- Rs. <?= number_format($total_expenses, 2) ?></div>
+                </div>
+                <div class="statement-row d-flex justify-content-between align-items-center bg-light bg-opacity-50 px-3 rounded">
+                    <div class="text-muted"><i class="fa-solid fa-minus me-2 opacity-50"></i>Staff Payroll Distributions</div>
+                    <div class="text-danger fw-semibold">- Rs. <?= number_format($total_payroll, 2) ?></div>
+                </div>
+            </div>
+            
+            <div class="mt-4 p-4 rounded-4 <?= $net_profit >= 0 ? 'bg-success bg-opacity-10 border border-success border-opacity-25' : 'bg-danger bg-opacity-10 border border-danger border-opacity-25' ?>">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small fw-bold text-uppercase text-muted opacity-75">Final Net Performance</div>
+                        <h3 class="mb-0 fw-bold <?= $profit_class ?>"><?= $net_profit >= 0 ? 'NET PERIOD PROFIT' : 'NET PERIOD LOSS' ?></h3>
+                    </div>
+                    <div class="text-end">
+                        <h2 class="mb-0 fw-bold <?= $profit_class ?>">Rs. <?= number_format($net_profit, 2) ?></h2>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
+
 <!-- ASSETS SUMMARY -->
-<div class="card content-card p-4 shadow-sm border-0 border-start border-4 border-secondary">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h5 class="fw-bold text-secondary mb-1">Current Inventory Valuation</h5>
-            <p class="text-muted small mb-0">This represents the estimated retail value of all physical stock currently sitting in your shop across all products.</p>
-        </div>
-        <div class="col-md-4 text-md-end mt-3 mt-md-0">
-            <h3 class="fw-bold mb-0 text-dark">Rs. <?= number_format((float)$stockValue, 2) ?></h3>
+<div class="card modern-card mb-5 border-start border-5 border-secondary shadow-sm">
+    <div class="card-body p-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-warehouse text-secondary me-2"></i> Current Inventory Valuation</h5>
+                <p class="text-muted small mb-0">Total estimated market value of all physical stock currently available across all product categories.</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <div class="small fw-bold text-muted text-uppercase mb-1">AGGREGATE ASSET VALUE</div>
+                <h2 class="fw-bold mb-0 text-dark">Rs. <?= number_format((float)$stockValue, 2) ?></h2>
+            </div>
         </div>
     </div>
 </div>

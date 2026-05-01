@@ -241,260 +241,374 @@ $stmtPurch->execute($paramsPurch);
 $purchases = $stmtPurch->fetchAll();
 ?>
 
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-    <h3 class="mb-0">Purchases & Replenishment</h3>
-    <a href="dashboard.php?page=purchases" class="btn btn-outline-primary <?= $edit ? '' : 'd-none' ?>">Add New</a>
+
+<style>
+    /* Modern UI Components */
+    .purchases-header {
+        background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+        padding: 25px;
+        border-radius: 15px;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 20px rgba(9, 132, 227, 0.15);
+    }
+    .modern-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    .form-section-block {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e2e8f0;
+        height: 100%;
+    }
+    .section-title-sm {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #64748b;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .final-payable-box {
+        background: #1e293b;
+        border-radius: 10px;
+        padding: 15px;
+        color: white;
+        border-left: 4px solid #00d2d3;
+    }
+    
+    /* Modern Badges */
+    .status-pill {
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .pill-received { background: #e0fdf4; color: #10b981; }
+    .pill-pending { background: #fffbeb; color: #f59e0b; }
+    .pill-paid { background: #eff6ff; color: #3b82f6; }
+    .pill-partial { background: #fdf4ff; color: #a855f7; }
+    .pill-unpaid { background: #fef2f2; color: #ef4444; }
+
+    .action-btn-group .btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s;
+        border: none;
+    }
+    .btn-action-edit { background: #f1f5f9; color: #3b82f6; }
+    .btn-action-edit:hover { background: #3b82f6; color: white; }
+    .btn-action-del { background: #fef2f2; color: #ef4444; }
+    .btn-action-del:hover { background: #ef4444; color: white; }
+</style>
+
+<div class="purchases-header d-flex justify-content-between align-items-center">
+    <div>
+        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-cart-flatbed-suitcase me-2"></i> Purchases & Replenishment</h3>
+        <p class="mb-0 opacity-75">Procurement and Inventory Inbound</p>
+    </div>
+    <a href="dashboard.php?page=purchases" class="btn btn-light fw-bold px-4 <?= $edit ? '' : 'disabled opacity-50' ?>">
+        <i class="fa-solid fa-plus-circle me-1 text-primary"></i> New Purchase
+    </a>
 </div>
 
 <!-- ALERT -->
 <?php if(isset($_SESSION['message'])): ?>
-    <div class="alert alert-<?= $_SESSION['message_type'] ?> alert-dismissible fade show" role="alert">
+    <div class="alert alert-<?= $_SESSION['message_type'] ?> alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        <i class="fa-solid <?= $_SESSION['message_type'] == 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle' ?> me-2"></i>
         <?= $_SESSION['message'] ?>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     <?php unset($_SESSION['message'], $_SESSION['message_type']); ?>
 <?php endif; ?>
 
+
 <!-- FORM -->
-<div class="card content-card p-4 mb-4 shadow-sm border-0">
-    <h5 class="mb-3 text-secondary"><?= $edit ? 'Edit Purchase' : 'New Purchase' ?></h5>
-    <form method="POST">
-        <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
-        
-        <div class="row g-4">
-            <!-- SECTION 1: BASIC INFO -->
-            <div class="col-12">
-                <div class="p-3 bg-light rounded-3 border">
-                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-info-circle me-2"></i>1. Basic Information</h6>
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold">Reference No.</label>
-                            <input type="text" name="reference_no" class="form-control" value="<?= htmlspecialchars($edit['reference_no'] ?? '') ?>" placeholder="Auto-generate">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold">Invoice No.</label>
-                            <input type="text" name="invoice_no" class="form-control" value="<?= htmlspecialchars($edit['invoice_no'] ?? '') ?>" placeholder="Supplier Invoice #">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold">Supplier *</label>
-                            <input type="text" name="supplier" class="form-control" value="<?= htmlspecialchars($edit['supplier'] ?? '') ?>" placeholder="e.g. ABC Dist" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold">Purchase Date</label>
-                            <input type="text" class="form-control bg-white" value="<?= isset($edit['purchase_date']) ? date('Y-m-d H:i', strtotime($edit['purchase_date'])) : date('Y-m-d H:i') ?>" readonly disabled>
+<div class="card modern-card mb-5">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-4 text-dark"><?= $edit ? '<i class="fa-solid fa-edit text-primary me-2"></i>Edit Purchase Record' : '<i class="fa-solid fa-plus-circle text-primary me-2"></i>Register New Purchase' ?></h5>
+        <form method="POST">
+            <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
+            
+            <div class="row g-4">
+                <!-- 1. Basic Information -->
+                <div class="col-12">
+                    <div class="form-section-block">
+                        <div class="section-title-sm"><i class="fa-solid fa-file-invoice"></i> 1. Basic Information</div>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label text-muted small fw-bold">Reference No.</label>
+                                <input type="text" name="reference_no" class="form-control border-light" value="<?= htmlspecialchars($edit['reference_no'] ?? '') ?>" placeholder="PUR-XXXX (Auto)">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-muted small fw-bold">Invoice No.</label>
+                                <input type="text" name="invoice_no" class="form-control border-light" value="<?= htmlspecialchars($edit['invoice_no'] ?? '') ?>" placeholder="Supplier Invoice #">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-muted small fw-bold">Supplier Name *</label>
+                                <input type="text" name="supplier" class="form-control border-primary bg-white" value="<?= htmlspecialchars($edit['supplier'] ?? '') ?>" placeholder="Search or Enter Supplier" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-muted small fw-bold">Record Date</label>
+                                <input type="text" class="form-control bg-transparent border-0 fw-bold p-0" value="<?= isset($edit['purchase_date']) ? date('Y-m-d H:i', strtotime($edit['purchase_date'])) : date('Y-m-d H:i') ?>" readonly disabled>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- SECTION 2 & 3: PRODUCT & PRICING -->
-            <div class="col-lg-8">
-                <div class="p-3 bg-white rounded-3 border h-100">
-                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-box me-2"></i>2 & 3. Product & Pricing</h6>
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold">Filter Category</label>
-                            <select id="filter_category" class="form-select border-info">
-                                <option value="">All Categories</option>
-                                <?php foreach($categories as $cat): ?>
-                                    <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label text-muted small fw-bold">Select Product *</label>
-                            <div class="d-flex gap-2 align-items-start">
-                                <select name="product_id" id="purchase_product" class="form-select border-primary" required>
-                                    <option value="" data-image="" data-cost="" data-price="" data-cat="">Select Product...</option>
-                                    <?php foreach($products as $prod): ?>
-                                        <option value="<?= $prod['id'] ?>" 
-                                                data-image="<?= htmlspecialchars(product_image_url($prod['image_path'] ?? null)) ?>"
-                                                data-cost="<?= $prod['cost_price'] ?? 0 ?>"
-                                                data-price="<?= $prod['price'] ?? 0 ?>"
-                                                data-cat="<?= $prod['category_id'] ?>"
-                                                <?= (isset($edit['product_id']) && $edit['product_id'] == $prod['id']) ? 'selected' : '' ?>>
-                                            [<?= htmlspecialchars($prod['cat_name'] ?: 'No Category') ?>] <?= htmlspecialchars($prod['name']) ?> (Stock: <?= $prod['stock'] ?>)
-                                        </option>
+                <!-- 2. Product & Pricing -->
+                <div class="col-lg-8">
+                    <div class="form-section-block">
+                        <div class="section-title-sm"><i class="fa-solid fa-box-open"></i> 2. Product & Inventory Inbound</div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">Category Filter</label>
+                                <select id="filter_category" class="form-select border-info text-info fw-bold">
+                                    <option value="">All Categories</option>
+                                    <?php foreach($categories as $cat): ?>
+                                        <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <img id="product_preview_img" src="" alt="" class="rounded border bg-light" style="width: 45px; height: 45px; object-fit: cover; display: none;">
                             </div>
-                            <div id="price_hint" class="small mt-1 text-muted"></div>
-                        </div>
-                        <div class="col-md-5">
-                            <label class="form-label text-muted small fw-bold">Batch Number / Expiry</label>
-                            <div class="input-group">
-                                <input type="text" name="batch_no" class="form-control" value="<?= htmlspecialchars($edit['batch_no'] ?? '') ?>" placeholder="Batch #">
-                                <input type="date" name="expiry_date" class="form-control" value="<?= htmlspecialchars($edit['expiry_date'] ?? '') ?>">
+                            <div class="col-md-8">
+                                <label class="form-label text-muted small fw-bold">Select Product *</label>
+                                <div class="d-flex gap-2">
+                                    <div class="flex-grow-1 position-relative">
+                                        <select name="product_id" id="purchase_product" class="form-select form-select-lg border-primary fw-bold" required>
+                                            <option value="" data-image="" data-cost="" data-price="" data-cat="">Search Product...</option>
+                                            <?php foreach($products as $prod): ?>
+                                                <option value="<?= $prod['id'] ?>" 
+                                                        data-image="<?= htmlspecialchars(product_image_url($prod['image_path'] ?? null)) ?>"
+                                                        data-cost="<?= $prod['cost_price'] ?? 0 ?>"
+                                                        data-price="<?= $prod['price'] ?? 0 ?>"
+                                                        data-cat="<?= $prod['category_id'] ?>"
+                                                        <?= (isset($edit['product_id']) && $edit['product_id'] == $prod['id']) ? 'selected' : '' ?>>
+                                                    [<?= htmlspecialchars($prod['cat_name'] ?: 'None') ?>] <?= htmlspecialchars($prod['name']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <img id="product_preview_img" src="" alt="" class="rounded-pill border" style="width: 48px; height: 48px; object-fit: cover; display: none;">
+                                </div>
+                                <div id="price_hint" class="mt-2"></div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Batch # / Expiry</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fa-solid fa-barcode text-muted"></i></span>
+                                    <input type="text" name="batch_no" class="form-control" value="<?= htmlspecialchars($edit['batch_no'] ?? '') ?>" placeholder="Batch #">
+                                    <input type="date" name="expiry_date" class="form-control" value="<?= htmlspecialchars($edit['expiry_date'] ?? '') ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-6"></div>
+
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">Quantity *</label>
+                                <input type="number" name="quantity" id="purchase_qty" class="form-control form-control-lg fw-bold border-primary" value="<?= htmlspecialchars($edit['quantity'] ?? '') ?>" min="1" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">Unit Buy Price *</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-light text-muted">Rs.</span>
+                                    <input type="number" step="0.01" name="unit_cost" id="purchase_unit_cost" class="form-control fw-bold" value="<?= htmlspecialchars($edit['unit_cost'] ?? '') ?>" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold text-success">New Selling Price</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-success-subtle text-success border-success"><i class="fa-solid fa-tag"></i></span>
+                                    <input type="number" step="0.01" name="selling_price" id="purchase_selling_price" class="form-control border-success text-success fw-bold" value="<?= htmlspecialchars($edit['selling_price'] ?? '') ?>" placeholder="0.00">
+                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold">Quantity *</label>
-                            <input type="number" name="quantity" id="purchase_qty" class="form-control form-control-lg fw-bold" value="<?= htmlspecialchars($edit['quantity'] ?? '') ?>" min="1" required>
+                <!-- 3. Financials & Payables -->
+                <div class="col-lg-4">
+                    <div class="form-section-block bg-white border-0 shadow-sm">
+                        <div class="section-title-sm"><i class="fa-solid fa-calculator"></i> 3. Tax & Payables</div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Subtotal</label>
+                            <input type="number" step="0.01" name="total_cost" id="purchase_total" class="form-control bg-light border-0 fw-bold" value="<?= htmlspecialchars($edit['total_cost'] ?? '') ?>" readonly>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold">Buy Price (Unit) *</label>
-                            <input type="number" step="0.01" name="unit_cost" id="purchase_unit_cost" class="form-control form-control-lg" value="<?= htmlspecialchars($edit['unit_cost'] ?? '') ?>" placeholder="0.00" required>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Supplier Discount (Rs.)</label>
+                            <input type="number" step="0.01" name="discount" id="purchase_discount" class="form-control border-light" value="<?= htmlspecialchars($edit['discount'] ?? '0.00') ?>">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold text-success">New Selling Price</label>
-                            <input type="number" step="0.01" name="selling_price" id="purchase_selling_price" class="form-control form-control-lg border-success text-success" value="<?= htmlspecialchars($edit['selling_price'] ?? '') ?>" placeholder="0.00">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Extra Tax / Fees (Rs.)</label>
+                            <input type="number" step="0.01" name="tax" id="purchase_tax" class="form-control border-light" value="<?= htmlspecialchars($edit['tax'] ?? '0.00') ?>">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold">Total Cost</label>
-                            <input type="number" step="0.01" name="total_cost" id="purchase_total" class="form-control form-control-lg bg-light" value="<?= htmlspecialchars($edit['total_cost'] ?? '') ?>" readonly>
+                        
+                        <div class="final-payable-box mt-4">
+                            <div class="small opacity-75 mb-1 text-uppercase fw-bold">Final Payable Amount</div>
+                            <h3 class="mb-0 fw-bold" id="final_amount_display">Rs. 0.00</h3>
+                            <input type="hidden" name="final_amount" id="purchase_final_amount" value="<?= $edit['final_amount'] ?? '0' ?>">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Payment & Completion -->
+                <div class="col-12">
+                    <div class="form-section-block border-2 border-primary-subtle bg-primary-subtle bg-opacity-10">
+                        <div class="row align-items-center g-4">
+                            <div class="col-md-3">
+                                <div class="section-title-sm text-primary mb-2"><i class="fa-solid fa-credit-card"></i> 4. Payment & Status</div>
+                                <select name="payment_method" class="form-select fw-bold border-primary-subtle">
+                                    <option value="Cash" <?= (isset($edit['payment_method']) && $edit['payment_method'] == 'Cash') ? 'selected' : '' ?>>Cash Payment</option>
+                                    <option value="Card" <?= (isset($edit['payment_method']) && $edit['payment_method'] == 'Card') ? 'selected' : '' ?>>Bank / Card</option>
+                                    <option value="Online" <?= (isset($edit['payment_method']) && $edit['payment_method'] == 'Online') ? 'selected' : '' ?>>Online Transfer</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-muted small fw-bold text-primary">Paid Amount</label>
+                                <input type="number" step="0.01" name="paid_amount" id="purchase_paid" class="form-control border-primary bg-white fw-bold" value="<?= htmlspecialchars($edit['paid_amount'] ?? '0.00') ?>">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label text-muted small fw-bold">Due Balance</label>
+                                <input type="number" step="0.01" name="due_amount" id="purchase_due" class="form-control bg-white text-danger fw-bold border-0 fs-5" value="<?= htmlspecialchars($edit['due_amount'] ?? '0.00') ?>" readonly>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-muted small fw-bold">Stocking Status</label>
+                                <select name="status" class="form-select fw-bold <?= (isset($edit['status']) && $edit['status'] == 'Received') ? 'text-success border-success bg-white' : 'text-warning border-warning bg-white' ?>">
+                                    <option value="Pending" <?= (isset($edit['status']) && $edit['status'] == 'Pending') ? 'selected' : '' ?>>Pending Order</option>
+                                    <option value="Received" <?= (isset($edit['status']) && $edit['status'] == 'Received') ? 'selected' : '' ?>>Received (Add Stock)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <input type="hidden" name="payment_status" id="purchase_pay_status" value="<?= $edit['payment_status'] ?? 'Unpaid' ?>">
+                                <button class="btn btn-primary btn-lg w-100 shadow fw-bold py-3" name="<?= $edit ? 'update' : 'add' ?>">
+                                    <?= $edit ? '<i class="fa-solid fa-save me-2"></i>Update' : '<i class="fa-solid fa-check-circle me-2"></i>Register' ?>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- SECTION 4: DISCOUNT & TAX -->
-            <div class="col-lg-4">
-                <div class="p-3 bg-white rounded-3 border h-100">
-                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-percent me-2"></i>4. Discount & Tax</h6>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Supplier Discount (Rs)</label>
-                        <input type="number" step="0.01" name="discount" id="purchase_discount" class="form-control" value="<?= htmlspecialchars($edit['discount'] ?? '0.00') ?>">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Tax / GST (Rs)</label>
-                        <input type="number" step="0.01" name="tax" id="purchase_tax" class="form-control" value="<?= htmlspecialchars($edit['tax'] ?? '0.00') ?>">
-                    </div>
-                    <div class="p-2 bg-dark text-white rounded">
-                        <label class="small opacity-75">Final Payable Amount:</label>
-                        <h4 class="mb-0 fw-bold" id="final_amount_display">Rs. 0.00</h4>
-                        <input type="hidden" name="final_amount" id="purchase_final_amount" value="<?= $edit['final_amount'] ?? '0' ?>">
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION 6: PAYMENT INFO -->
-            <div class="col-12">
-                <div class="p-3 bg-light rounded-3 border">
-                    <div class="row align-items-end g-3">
-                        <div class="col-md-3">
-                            <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-wallet2 me-2"></i>6. Payment Information</h6>
-                            <select name="payment_method" class="form-select">
-                                <option value="Cash" <?= (isset($edit['payment_method']) && $edit['payment_method'] == 'Cash') ? 'selected' : '' ?>>Cash Payment</option>
-                                <option value="Card" <?= (isset($edit['payment_method']) && $edit['payment_method'] == 'Card') ? 'selected' : '' ?>>Card / Bank</option>
-                                <option value="Online" <?= (isset($edit['payment_method']) && $edit['payment_method'] == 'Online') ? 'selected' : '' ?>>Online Transfer</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label text-muted small fw-bold">Paid Amount (Rs)</label>
-                            <input type="number" step="0.01" name="paid_amount" id="purchase_paid" class="form-control" value="<?= htmlspecialchars($edit['paid_amount'] ?? '0.00') ?>">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label text-muted small fw-bold">Due Balance (Rs)</label>
-                            <input type="number" step="0.01" name="due_amount" id="purchase_due" class="form-control text-danger fw-bold bg-white" value="<?= htmlspecialchars($edit['due_amount'] ?? '0.00') ?>" readonly>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label text-muted small fw-bold">Purchase Status</label>
-                            <select name="status" class="form-select fw-bold <?= (isset($edit['status']) && $edit['status'] == 'Received') ? 'text-success border-success' : 'text-warning border-warning' ?>">
-                                <option value="Pending" <?= (isset($edit['status']) && $edit['status'] == 'Pending') ? 'selected' : '' ?>>Pending (Order Placed)</option>
-                                <option value="Received" <?= (isset($edit['status']) && $edit['status'] == 'Received') ? 'selected' : '' ?>>Received (Adds to Stock)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <input type="hidden" name="payment_status" id="purchase_pay_status" value="<?= $edit['payment_status'] ?? 'Unpaid' ?>">
-                            <button class="btn btn-primary btn-lg w-100 shadow-sm fw-bold" name="<?= $edit ? 'update' : 'add' ?>">
-                                <?= $edit ? 'Update Record' : 'Save Purchase' ?>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
-<!-- DATA TABLE -->
-<div class="card content-card p-3 shadow-sm border-0">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="text-muted mb-0">Record List</h6>
-        <form method="GET" class="d-flex gap-2 align-items-center print-hide">
-            <input type="hidden" name="page" value="purchases">
-            <input type="date" name="start" class="form-control form-control-sm border-primary" value="<?= htmlspecialchars($start_date) ?>" style="width: 140px;">
-            <span class="small text-muted">-</span>
-            <input type="date" name="end" class="form-control form-control-sm border-primary" value="<?= htmlspecialchars($end_date) ?>" style="width: 140px;">
-            <button class="btn btn-primary btn-sm fw-bold">Filter</button>
-            <a href="dashboard.php?page=purchases" class="btn btn-outline-secondary btn-sm">Clear</a>
-            <a href="dashboard.php?page=reports&pdf=1&type=purchase&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>" class="btn btn-dark btn-sm fw-bold shadow-sm d-flex align-items-center">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="me-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                PDF
-            </a>
         </form>
     </div>
-<div class="table-responsive">
-<table class="table table-bordered table-hover align-middle mb-0 bg-white">
-<thead class="table-light text-muted small text-uppercase">
-<tr>
-    <th>Ref / Invoice</th>
-    <th>Product</th>
-    <th>Supplier</th>
-    <th>Cost & Qty</th>
-    <th>Batch Info</th>
-    <th>Total / Final</th>
-    <th>Status / Pay</th>
-    <th>Date</th>
-    <th class="text-end">Action</th>
-</tr>
-</thead>
-<tbody>
-<?php foreach($purchases as $p): ?>
-<tr>
-    <td>
-        <div class="fw-bold text-dark"><?= htmlspecialchars($p['reference_no']) ?></div>
-        <div class="small text-muted"><?= htmlspecialchars($p['invoice_no'] ?: '-') ?></div>
-    </td>
-    <td>
-        <div class="fw-bold text-dark"><?= htmlspecialchars($p['product_name'] ?: 'Unknown') ?></div>
-        <div class="small text-muted"><i class="bi bi-tag me-1"></i><?= htmlspecialchars($p['category_name'] ?: 'Uncategorized') ?></div>
-        <div class="small text-primary">Sell Price: Rs <?= number_format($p['selling_price'], 2) ?></div>
-    </td>
-    <td><?= htmlspecialchars($p['supplier']) ?></td>
-    <td>
-        <div><small class="text-muted">Unit Cost:</small> <?= number_format($p['unit_cost'], 2) ?></div>
-        <div><small class="text-muted">Total Qty:</small> <b><?= htmlspecialchars($p['quantity']) ?></b></div>
-    </td>
-    <td>
-        <?php if($p['status'] == 'Received'): ?>
-            <div class="small">Rem: <b class="<?= $p['remaining_qty'] > 0 ? 'text-success' : 'text-danger' ?>"><?= $p['remaining_qty'] ?></b></div>
-        <?php endif; ?>
-        <div class="small text-muted">Batch: <?= htmlspecialchars($p['batch_no'] ?: '-') ?></div>
-        <?php if($p['expiry_date']): ?>
-            <div class="small text-danger">Exp: <?= date('d M Y', strtotime($p['expiry_date'])) ?></div>
-        <?php endif; ?>
-    </td>
-    <td>
-        <div class="text-muted small">Sub: <?= number_format($p['total_cost'], 2) ?></div>
-        <div class="fw-bold text-primary">Final: <?= number_format($p['final_amount'] ?? $p['total_cost'], 2) ?></div>
-    </td>
-    <td>
-        <?php 
-            $statusColor = $p['status'] == 'Received' ? 'success' : 'warning text-dark';
-            $payColor = $p['payment_status'] == 'Paid' ? 'primary' : ($p['payment_status'] == 'Partial' ? 'info text-dark' : 'danger');
-        ?>
-        <div class="mb-1"><span class="badge bg-<?= $statusColor ?>"><?= $p['status'] ?></span></div>
-        <div><span class="badge bg-<?= $payColor ?>"><?= $p['payment_status'] ?></span></div>
-        <div class="small mt-1 text-danger">Due: <?= number_format($p['due_amount'], 2) ?></div>
-    </td>
-    <td><small><?= htmlspecialchars(date('M d, Y', strtotime($p['purchase_date']))) ?></small></td>
-    <td class="text-end">
-        <a href="dashboard.php?page=purchases&edit=<?= $p['id'] ?>" class="btn btn-outline-primary btn-sm me-1">Edit</a>
-        <a href="dashboard.php?page=purchases&delete=<?= $p['id'] ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('Delete this purchase? This will revert stock if it was Received. Are you sure?')">Del</a>
-    </td>
-</tr>
-<?php endforeach; ?>
-<?php if(empty($purchases)): ?>
-<tr>
-    <td colspan="8" class="text-center py-4 text-muted">No purchases found. Create one above!</td>
-</tr>
-<?php endif; ?>
-</tbody>
-</table>
 </div>
+
+
+<!-- DATA TABLE -->
+<div class="card modern-card overflow-hidden">
+    <div class="card-header bg-white py-3 border-0">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h6 class="fw-bold text-muted text-uppercase mb-0 small">Purchase Records</h6>
+            <form method="GET" class="d-flex gap-2 align-items-center print-hide">
+                <input type="hidden" name="page" value="purchases">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-0"><i class="fa-solid fa-calendar-alt text-muted"></i></span>
+                    <input type="date" name="start" class="form-control border-light" value="<?= htmlspecialchars($start_date) ?>" style="width: 130px;">
+                    <input type="date" name="end" class="form-control border-light" value="<?= htmlspecialchars($end_date) ?>" style="width: 130px;">
+                </div>
+                <button class="btn btn-dark btn-sm fw-bold px-3">Filter</button>
+                <a href="dashboard.php?page=purchases" class="btn btn-light btn-sm"><i class="fa-solid fa-refresh"></i></a>
+                <a href="dashboard.php?page=reports&pdf=1&type=purchase&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>" class="btn btn-danger btn-sm fw-bold px-3">
+                    <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                </a>
+            </form>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-muted small text-uppercase">
+                <tr>
+                    <th class="ps-4">Reference / Invoice</th>
+                    <th>Inbound Product</th>
+                    <th>Supplier</th>
+                    <th>Pricing & Qty</th>
+                    <th>Inventory Status</th>
+                    <th>Total Stats</th>
+                    <th>Status / Payment</th>
+                    <th class="text-end pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach($purchases as $p): ?>
+            <tr>
+                <td class="ps-4">
+                    <div class="fw-bold text-dark"><?= htmlspecialchars($p['reference_no']) ?></div>
+                    <div class="small text-muted"><i class="fa-solid fa-receipt me-1 opacity-50"></i> <?= htmlspecialchars($p['invoice_no'] ?: '-') ?></div>
+                </td>
+                <td>
+                    <div class="fw-bold text-dark"><?= htmlspecialchars($p['product_name'] ?: 'Unknown') ?></div>
+                    <div class="small text-muted"><i class="fa-solid fa-layer-group me-1 opacity-50"></i> <?= htmlspecialchars($p['category_name'] ?: 'General') ?></div>
+                    <div class="small text-primary fw-semibold mt-1">SRP: Rs. <?= number_format($p['selling_price'], 2) ?></div>
+                </td>
+                <td><span class="fw-semibold text-secondary"><?= htmlspecialchars($p['supplier']) ?></span></td>
+                <td>
+                    <div><small class="text-muted">Cost:</small> Rs. <?= number_format($p['unit_cost'], 2) ?></div>
+                    <div><small class="text-muted">Qty:</small> <span class="badge bg-light text-dark fw-bold"><?= htmlspecialchars($p['quantity']) ?> units</span></div>
+                </td>
+                <td>
+                    <?php if($p['status'] == 'Received'): ?>
+                        <div class="small">In Stock: <b class="<?= $p['remaining_qty'] > 0 ? 'text-success' : 'text-danger' ?>"><?= $p['remaining_qty'] ?></b></div>
+                    <?php endif; ?>
+                    <div class="small text-muted mb-1">Batch: <span class="badge bg-light text-secondary fw-normal"><?= htmlspecialchars($p['batch_no'] ?: 'N/A') ?></span></div>
+                    <?php if($p['expiry_date']): ?>
+                        <div class="small text-danger fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i>Exp: <?= date('M d, Y', strtotime($p['expiry_date'])) ?></div>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <div class="text-muted small">Sub: Rs. <?= number_format($p['total_cost'], 2) ?></div>
+                    <div class="fw-bold text-dark fs-6">Final: Rs. <?= number_format($p['final_amount'] ?? $p['total_cost'], 2) ?></div>
+                </td>
+                <td>
+                    <div class="mb-2">
+                        <span class="status-pill <?= $p['status'] == 'Received' ? 'pill-received' : 'pill-pending' ?>">
+                            <i class="fa-solid <?= $p['status'] == 'Received' ? 'fa-circle-check' : 'fa-clock' ?> me-1"></i><?= $p['status'] ?>
+                        </span>
+                    </div>
+                    <div>
+                        <?php 
+                            $payClass = $p['payment_status'] == 'Paid' ? 'pill-paid' : ($p['payment_status'] == 'Partial' ? 'pill-partial' : 'pill-unpaid');
+                            $payIcon = $p['payment_status'] == 'Paid' ? 'fa-check-double' : ($p['payment_status'] == 'Partial' ? 'fa-adjust' : 'fa-times-circle');
+                        ?>
+                        <span class="status-pill <?= $payClass ?>">
+                            <i class="fa-solid <?= $payIcon ?> me-1"></i><?= $p['payment_status'] ?>
+                        </span>
+                    </div>
+                    <?php if($p['due_amount'] > 0): ?>
+                        <div class="small mt-1 text-danger fw-bold">Due: Rs. <?= number_format($p['due_amount'], 2) ?></div>
+                    <?php endif; ?>
+                </td>
+                <td class="text-end pe-4">
+                    <div class="action-btn-group d-flex justify-content-end gap-2">
+                        <a href="dashboard.php?page=purchases&edit=<?= $p['id'] ?>" class="btn btn-action-edit" title="Edit Record">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        <a href="dashboard.php?page=purchases&delete=<?= $p['id'] ?>" class="btn btn-action-del" 
+                           onclick="return confirm('Delete this purchase? This will revert stock if received. Confirm?')" title="Delete Record">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            <?php if(empty($purchases)): ?>
+            <tr><td colspan="8" class="text-center py-5 text-muted">
+                <i class="fa-solid fa-file-lines fs-1 opacity-25 mb-3 d-block"></i>
+                No purchase records found for the selected period.
+            </td></tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>

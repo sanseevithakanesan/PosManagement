@@ -1139,7 +1139,7 @@ body {
                         <input type="text"
                                id="customer_lookup"
                                class="form-control"
-                               placeholder="Phone or 0772844417 - thinu"
+                               placeholder="Phone or 0772844417 - sanju"
                                autocomplete="off">
                         <div id="customer_ac_dropdown" class="customer-ac-dropdown" role="listbox" aria-label="Matching customers"></div>
                         <p class="customer-ac-hint mb-0">

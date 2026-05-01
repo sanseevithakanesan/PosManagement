@@ -58,215 +58,139 @@ if($search != ''){
 $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
 ?>
 
+
 <style>
-/* Alert message styles */
-.alert {
-    padding: 12px 20px;
-    margin-bottom: 20px;
-    border-radius: 5px;
-    position: relative;
-    animation: slideDown 0.5s ease;
-}
-
-.alert-success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.alert-danger {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
-.alert-warning {
-    background-color: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeeba;
-}
-
-.close-alert {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    font-size: 20px;
-    font-weight: bold;
-}
-
-.close-alert:hover {
-    opacity: 0.7;
-}
-
-@keyframes slideDown {
-    from {
-        transform: translateY(-100%);
-        opacity: 0;
+    /* Modern UI Overrides */
+    .products-header {
+        background: linear-gradient(135deg, #48dbfb 0%, #2e86de 100%);
+        padding: 25px;
+        border-radius: 15px;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 20px rgba(46, 134, 222, 0.2);
     }
-    to {
-        transform: translateY(0);
-        opacity: 1;
+    .modern-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
     }
-}
-
-/* Stock status badges */
-.badge {
-    display: inline-block;
-    padding: 3px 6px;
-    font-size: 10px;
-    font-weight: bold;
-    border-radius: 3px;
-    margin-left: 5px;
-}
-
-.badge-danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.badge-warning {
-    background-color: #ffc107;
-    color: #212529;
-}
-
-.text-danger {
-    color: #dc3545 !important;
-    font-weight: bold;
-}
-
-.text-warning {
-    color: #ffc107 !important;
-    font-weight: bold;
-}
-
-/* Delete confirmation modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    animation: fadeIn 0.3s;
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    animation: slideUp 0.3s;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(50px);
-        opacity: 0;
+    .img-preview-lg {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        object-fit: cover;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
     }
-    to {
-        transform: translateY(0);
-        opacity: 1;
+    .img-preview-lg:hover { transform: scale(1.1); }
+    
+    /* Soft Pill Badges */
+    .stock-badge {
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
-}
+    .badge-in-stock { background: #e0fdf4; color: #10b981; }
+    .badge-low-stock { background: #fffbeb; color: #f59e0b; }
+    .badge-out-stock { background: #fef2f2; color: #ef4444; }
+    
+    /* Action Buttons */
+    .action-group .btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        transition: all 0.2s;
+        border: none;
+        margin: 0 2px;
+    }
+    .btn-edit-sec { background: #f1f5f9; color: #64748b; }
+    .btn-edit-sec:hover { background: #2e86de; color: white; }
+    .btn-print { background: #f1f5f9; color: #334155; }
+    .btn-print:hover { background: #334155; color: white; }
+    .btn-delete-sec { background: #fef2f2; color: #ef4444; }
+    .btn-delete-sec:hover { background: #ef4444; color: white; }
 
-.modal-header {
-    padding: 10px 0;
-    border-bottom: 1px solid #ddd;
-    margin-bottom: 15px;
-}
-
-.modal-footer {
-    padding: 10px 0;
-    border-top: 1px solid #ddd;
-    margin-top: 15px;
-    text-align: right;
-}
-
-.modal-footer button {
-    padding: 8px 15px;
-    margin-left: 10px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-confirm {
-    background-color: #dc3545;
-    color: white;
-}
-
-.btn-cancel {
-    background-color: #6c757d;
-    color: white;
-}
-
-.btn-loading {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
+    /* Modern Modal */
+    .modern-modal-content {
+        border-radius: 16px;
+        border: none;
+        overflow: hidden;
+    }
+    .modal-header-modern {
+        background: #f8fafc;
+        padding: 20px;
+        text-align: center;
+    }
+    .modal-footer-modern {
+        background: #f8fafc;
+        padding: 15px;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+    }
 </style>
 
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-    <h3 class="mb-0">Products</h3>
-    <a href="product_create.php" class="btn btn-primary">+ New product</a>
+
+<div class="products-header d-flex justify-content-between align-items-center">
+    <div>
+        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-boxes-stacked me-2"></i> Products</h3>
+        <p class="mb-0 opacity-75">Inventory and SKU Management</p>
+    </div>
+    <a href="product_create.php" class="btn btn-light btn-lg fw-bold px-4">
+        <i class="fa-solid fa-plus-circle me-2 text-primary"></i> New Product
+    </a>
 </div>
 
-<!-- Display Alert Messages -->
-<?php if(isset($_SESSION['message'])): ?>
-    <div class="alert alert-<?= $_SESSION['message_type'] ?>">
-        <?= $_SESSION['message'] ?>
-        <span class="close-alert" onclick="this.parentElement.style.display='none';">&times;</span>
-    </div>
-    <?php 
-    unset($_SESSION['message']);
-    unset($_SESSION['message_type']);
-    ?>
-<?php endif; ?>
-
 <!-- SEARCH -->
-<form method="GET" class="mb-3">
-    <input type="hidden" name="page" value="products">
-    <div class="input-group">
-        <input type="text" name="search"
-               class="form-control"
-               placeholder="Search product name / barcode"
-               value="<?= htmlspecialchars($search) ?>">
-        <button class="btn btn-primary" type="submit">Search</button>
-        <?php if($search != ''): ?>
-            <a href="dashboard.php?page=products" class="btn btn-outline-secondary">Clear</a>
-        <?php endif; ?>
+<div class="card modern-card mb-4">
+    <div class="card-body p-3">
+        <form method="GET">
+            <input type="hidden" name="page" value="products">
+            <div class="input-group input-group-lg border-0 bg-light rounded-pill px-3">
+                <span class="input-group-text bg-transparent border-0 text-muted">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" name="search"
+                       class="form-control bg-transparent border-0"
+                       placeholder="Search product name or scan barcode..."
+                       value="<?= htmlspecialchars($search) ?>">
+                <?php if($search != ''): ?>
+                    <a href="dashboard.php?page=products" class="btn btn-transparent border-0 text-muted">
+                        <i class="fa-solid fa-times-circle"></i>
+                    </a>
+                <?php endif; ?>
+                <button class="btn btn-primary rounded-pill px-4 mx-1" type="submit">Search</button>
+            </div>
+        </form>
     </div>
-</form>
+</div>
+
 
 <!-- TABLE -->
-<div class="card content-card p-3">
-    <h5>Product List</h5>
-    <hr>
+<div class="card modern-card overflow-hidden">
+    <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-muted text-uppercase small">Inventory Items</h6>
+        <span class="badge bg-light text-dark fw-normal"><?= count($products) ?> Total Products</span>
+    </div>
     
     <?php if(count($products) > 0): ?>
         <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle">
-                <thead class="table-light">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase">
                     <tr>
-                        <th style="width:64px">Image</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Stock</th>
-                        <th>Barcode</th>
+                        <th class="ps-4" style="width:80px">Image</th>
+                        <th>Product Details</th>
+                        <th>Pricing</th>
+                        <th>Inventory</th>
                         <th>Category</th>
-                        <th>Action</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -281,74 +205,85 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
                     }
                     
                     // Stock status
-                    $stockClass = '';
-                    $stockBadge = '';
+                    $stockBadgeClass = 'badge-in-stock';
+                    $stockText = 'In Stock';
                     if($p['stock'] <= 0) {
-                        $stockClass = 'text-danger';
-                        $stockBadge = '<span class="badge badge-danger">Out of Stock</span>';
+                        $stockBadgeClass = 'badge-out-stock';
+                        $stockText = 'Out of Stock';
                     } elseif($p['stock'] <= 10) {
-                        $stockClass = 'text-warning';
-                        $stockBadge = '<span class="badge badge-warning">Low Stock</span>';
+                        $stockBadgeClass = 'badge-low-stock';
+                        $stockText = 'Low Stock';
                     }
                     ?>
                     
                     <tr>
-                        <td class="p-1">
+                        <td class="ps-4">
                             <img src="<?= htmlspecialchars(product_image_url($p['image_path'] ?? null)) ?>"
-                                 alt="" width="48" height="48" class="rounded border" style="width:48px;height:48px;object-fit:cover;">
+                                 alt="" class="img-preview-lg">
                         </td>
-                        <td><?= htmlspecialchars($p['name']) ?></td>
-                        <td>Rs. <?= number_format($p['price'], 2) ?></td>
-                        <td class="<?= $stockClass ?>">
-                            <?= $p['stock'] ?> <?= $stockBadge ?>
-                        </td>
-                        <td><?= htmlspecialchars($p['barcode'] ?: '-') ?></td>
-                        <td><?= htmlspecialchars($catName ?: '-') ?></td>
                         <td>
-                            <?php if (!empty($p['barcode'])): ?>
-                                <a href="print_barcode.php?id=<?= (int)$p['id'] ?>" target="_blank" rel="noopener" class="btn btn-outline-dark btn-sm me-1">Print label</a>
-                            <?php endif; ?>
-                            <a href="product_create.php?id=<?= (int)$p['id'] ?>"
-                               class="btn btn-primary btn-sm"
-                               style="display: inline-block; margin-right: 5px;">
-                                Edit
-                            </a>
-                            
-                            <button type="button"
-                                    class="btn btn-danger btn-sm"
-                                    onclick="checkAndDelete(<?= $p['id'] ?>, '<?= addslashes(htmlspecialchars($p['name'])) ?>')">
-                                Delete
-                            </button>
+                            <div class="fw-bold text-dark"><?= htmlspecialchars($p['name']) ?></div>
+                            <small class="text-muted"><i class="fa-solid fa-barcode me-1"></i> <?= htmlspecialchars($p['barcode'] ?: 'No Barcode') ?></small>
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-primary">Rs. <?= number_format($p['price'], 2) ?></div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="fw-bold me-2"><?= $p['stock'] ?></span>
+                                <span class="stock-badge <?= $stockBadgeClass ?>"><?= $stockText ?></span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-muted border"><?= htmlspecialchars($catName ?: 'General') ?></span>
+                        </td>
+                        <td class="text-center pe-4">
+                            <div class="action-group d-flex justify-content-center">
+                                <?php if (!empty($p['barcode'])): ?>
+                                    <a href="print_barcode.php?id=<?= (int)$p['id'] ?>" target="_blank" class="btn btn-print" title="Print Barcode">
+                                        <i class="fa-solid fa-print"></i>
+                                    </a>
+                                <?php endif; ?>
+                                <a href="product_create.php?id=<?= (int)$p['id'] ?>" class="btn btn-edit-sec" title="Edit Item">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <button type="button" class="btn btn-delete-sec" 
+                                        onclick="checkAndDelete(<?= $p['id'] ?>, '<?= addslashes(htmlspecialchars($p['name'])) ?>')" title="Delete Item">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
-        
-        <div class="mt-2 text-muted">
-            <small>Total Products: <?= count($products) ?></small>
-        </div>
     <?php else: ?>
-        <div class="alert alert-info text-center">
-            No products found. Use <strong>New product</strong> to create the first SKU.
+        <div class="p-5 text-center">
+            <i class="fa-solid fa-box-open fs-1 text-muted opacity-25 mb-3"></i>
+            <h5 class="text-muted">No products found.</h5>
+            <p class="text-muted small">Start by adding your first product using the "New Product" button above.</p>
         </div>
     <?php endif; ?>
 </div>
 
+
 <!-- Custom Modal for Delete Confirmation -->
 <div id="deleteModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h4>⚠️ Confirm Delete</h4>
+    <div class="modal-content modern-modal-content">
+        <div class="modal-header-modern">
+            <div class="bg-danger-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:60px; height:60px;">
+                <i class="fa-solid fa-triangle-exclamation text-danger fs-3"></i>
+            </div>
+            <h4 class="fw-bold text-dark">Confirm Delete</h4>
         </div>
-        <div class="modal-body">
-            <p id="deleteMessage">Are you sure you want to delete this product?</p>
-            <div id="orderInfo" style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px; display: none;"></div>
+        <div class="modal-body p-4 text-center">
+            <p id="deleteMessage" class="text-muted fs-5">Are you sure you want to delete this product?</p>
+            <div id="orderInfo" class="alert alert-warning border-0 small text-start" style="display: none;"></div>
         </div>
-        <div class="modal-footer">
-            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-            <button id="confirmDeleteBtn" class="btn-confirm" onclick="proceedDelete()">Delete</button>
+        <div class="modal-footer-modern pb-4">
+            <button class="btn btn-light px-4 rounded-pill" onclick="closeModal()">Keep Item</button>
+            <button id="confirmDeleteBtn" class="btn btn-danger px-4 rounded-pill shadow-sm" onclick="proceedDelete()">Delete Permanently</button>
         </div>
     </div>
 </div>

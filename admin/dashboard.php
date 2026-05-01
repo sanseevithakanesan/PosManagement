@@ -34,29 +34,76 @@
     <title>Admin Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 
 <body class="app-body">
 <div class="container-fluid px-0">
     <div class="row g-0">
-        <aside class="col-lg-2 d-none d-lg-block admin-sidebar p-3">
-            <h4 class="text-white text-center py-2 mb-3">POS ADMIN</h4>
-            <nav class="nav flex-column">
-                <a href="dashboard.php?page=home" class="nav-link <?= $page == 'home' ? 'active' : '' ?>">Dashboard</a>
+        <aside class="col-lg-2 d-none d-lg-block admin-sidebar">
+            <div class="sidebar-header">
+                <a href="dashboard.php?page=home" class="sidebar-logo">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                    <span>POS ADMIN</span>
+                </a>
+            </div>
+
+            <div class="sidebar-user-profile">
+                <div class="sidebar-avatar-wrapper">
+                    <img src="../assets/images/avatar.png" class="sidebar-avatar" alt="User" width="50" height="50">
+                    <div class="status-indicator"></div>
+                </div>
+                <div class="user-info">
+                    <span class="user-info-name"><?= htmlspecialchars($_SESSION['username'] ?? 'User') ?></span>
+                    <div class="d-flex align-items-center">
+                        <span class="user-info-role"><?= htmlspecialchars($_SESSION['role'] ?? 'Staff') ?></span>
+                        <span class="ms-2 badge rounded-pill bg-success" style="padding: 3px; font-size: 0;">Online</span>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="nav flex-column flex-grow-1">
+                <a href="dashboard.php?page=home" class="nav-link <?= $page == 'home' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-house"></i>Dashboard
+                </a>
                 <?php if($_SESSION['role'] === 'admin'): ?>
-                <a href="dashboard.php?page=categories" class="nav-link <?= $page == 'categories' ? 'active' : '' ?>">Categories</a>
-                <a href="dashboard.php?page=products" class="nav-link <?= $page == 'products' ? 'active' : '' ?>">Products</a>
-                <a href="dashboard.php?page=purchases" class="nav-link <?= $page == 'purchases' ? 'active' : '' ?>">Purchases</a>
-                <a href="dashboard.php?page=income" class="nav-link <?= $page == 'income' ? 'active' : '' ?>">Income</a>
-                <a href="dashboard.php?page=expenses" class="nav-link <?= $page == 'expenses' ? 'active' : '' ?>">Expenses</a>
-                <a href="dashboard.php?page=payroll" class="nav-link <?= $page == 'payroll' ? 'active' : '' ?>">Payroll</a>
-                <a href="dashboard.php?page=reports" class="nav-link <?= $page == 'reports' ? 'active' : '' ?>">Reports</a>
-                <a href="dashboard.php?page=customers" class="nav-link <?= $page == 'customers' ? 'active' : '' ?>">Customers</a>
+                <a href="dashboard.php?page=categories" class="nav-link <?= $page == 'categories' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-list"></i>Categories
+                </a>
+                <a href="dashboard.php?page=products" class="nav-link <?= $page == 'products' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-box"></i>Products
+                </a>
+                <a href="dashboard.php?page=purchases" class="nav-link <?= $page == 'purchases' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-cart-shopping"></i>Purchases
+                </a>
+                <a href="dashboard.php?page=income" class="nav-link <?= $page == 'income' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>Income
+                </a>
+                <a href="dashboard.php?page=expenses" class="nav-link <?= $page == 'expenses' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-money-bill-transfer"></i>Expenses
+                </a>
+                <a href="dashboard.php?page=payroll" class="nav-link <?= $page == 'payroll' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-users-gear"></i>Payroll
+                </a>
+                <a href="dashboard.php?page=reports" class="nav-link <?= $page == 'reports' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-chart-line"></i>Reports
+                </a>
+                <a href="dashboard.php?page=customers" class="nav-link <?= $page == 'customers' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-address-book"></i>Customers
+                </a>
                 <?php endif; ?>
-                <a href="dashboard.php?page=pos" class="nav-link <?= $page == 'pos' ? 'active' : '' ?>">Billing</a>
-                <a href="../logout.php" class="nav-link mt-2">Logout</a>
+                <a href="dashboard.php?page=pos" class="nav-link <?= $page == 'pos' ? 'active' : '' ?>">
+                    <i class="fa-solid fa-cash-register"></i>Billing
+                </a>
             </nav>
+
+            <div class="mt-auto mb-4 px-3">
+                <div class="border-top border-white border-opacity-10 mb-3"></div>
+                <a href="../logout.php" class="nav-link logout-link">
+                    <i class="fa-solid fa-right-from-bracket"></i>Log Out
+                </a>
+            </div>
         </aside>
 
         <div class="col-12 col-lg-10 min-vh-100">
@@ -71,29 +118,6 @@
             </nav>
 
             <main class="p-3 p-md-4 p-lg-4">
-                <div class="offcanvas offcanvas-start admin-sidebar text-white" tabindex="-1" id="mobileMenu">
-                    <div class="offcanvas-header border-bottom border-secondary">
-                        <h5 class="offcanvas-title">POS ADMIN</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-                    </div>
-                    <div class="offcanvas-body">
-                        <nav class="nav flex-column">
-                            <a href="dashboard.php?page=home" class="nav-link <?= $page == 'home' ? 'active' : '' ?>">Dashboard</a>
-                            <?php if($_SESSION['role'] === 'admin'): ?>
-                            <a href="dashboard.php?page=categories" class="nav-link <?= $page == 'categories' ? 'active' : '' ?>">Categories</a>
-                            <a href="dashboard.php?page=products" class="nav-link <?= $page == 'products' ? 'active' : '' ?>">Products</a>
-                            <a href="dashboard.php?page=purchases" class="nav-link <?= $page == 'purchases' ? 'active' : '' ?>">Purchases</a>
-                            <a href="dashboard.php?page=income" class="nav-link <?= $page == 'income' ? 'active' : '' ?>">Income</a>
-                            <a href="dashboard.php?page=expenses" class="nav-link <?= $page == 'expenses' ? 'active' : '' ?>">Expenses</a>
-                            <a href="dashboard.php?page=payroll" class="nav-link <?= $page == 'payroll' ? 'active' : '' ?>">Payroll</a>
-                            <a href="dashboard.php?page=reports" class="nav-link <?= $page == 'reports' ? 'active' : '' ?>">Reports</a>
-                            <a href="dashboard.php?page=customers" class="nav-link <?= $page == 'customers' ? 'active' : '' ?>">Customers</a>
-                            <?php endif; ?>
-                            <a href="dashboard.php?page=pos" class="nav-link <?= $page == 'pos' ? 'active' : '' ?>">Billing</a>
-                            <a href="../logout.php" class="nav-link mt-2">Logout</a>
-                        </nav>
-                    </div>
-                </div>
 
                 <?php
                 if($page == 'home'){
@@ -163,6 +187,70 @@
                 }
                 ?>
             </main>
+        </div>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-start admin-mobile-offcanvas text-white" tabindex="-1" id="mobileMenu">
+    <div class="offcanvas-header border-bottom border-light border-opacity-10">
+        <div class="sidebar-logo">
+            <i class="fa-solid fa-bolt-lightning text-primary me-2"></i>
+            <span>POS NAVIGATION</span>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0 d-flex flex-column">
+        <div class="sidebar-user-profile py-4">
+            <div class="sidebar-avatar-wrapper">
+                <img src="../assets/images/avatar.png" class="sidebar-avatar" alt="User" width="50" height="50">
+                <div class="status-indicator"></div>
+            </div>
+            <div class="user-info">
+                <span class="user-info-name"><?= htmlspecialchars($_SESSION['username'] ?? 'User') ?></span>
+                <div class="d-flex align-items-center">
+                    <span class="user-info-role"><?= htmlspecialchars($_SESSION['role'] ?? 'Staff') ?></span>
+                    <span class="ms-2 badge rounded-pill bg-success" style="padding: 3px; font-size: 0;">Online</span>
+                </div>
+            </div>
+        </div>
+        <nav class="nav flex-column flex-grow-1 px-3">
+            <a href="dashboard.php?page=home" class="nav-link <?= $page == 'home' ? 'active' : '' ?>">
+                <i class="fa-solid fa-house"></i>Dashboard
+            </a>
+            <?php if($_SESSION['role'] === 'admin'): ?>
+            <a href="dashboard.php?page=categories" class="nav-link <?= $page == 'categories' ? 'active' : '' ?>">
+                <i class="fa-solid fa-list"></i>Categories
+            </a>
+            <a href="dashboard.php?page=products" class="nav-link <?= $page == 'products' ? 'active' : '' ?>">
+                <i class="fa-solid fa-box"></i>Products
+            </a>
+            <a href="dashboard.php?page=purchases" class="nav-link <?= $page == 'purchases' ? 'active' : '' ?>">
+                <i class="fa-solid fa-cart-shopping"></i>Purchases
+            </a>
+            <a href="dashboard.php?page=income" class="nav-link <?= $page == 'income' ? 'active' : '' ?>">
+                <i class="fa-solid fa-hand-holding-dollar"></i>Income
+            </a>
+            <a href="dashboard.php?page=expenses" class="nav-link <?= $page == 'expenses' ? 'active' : '' ?>">
+                <i class="fa-solid fa-money-bill-transfer"></i>Expenses
+            </a>
+            <a href="dashboard.php?page=payroll" class="nav-link <?= $page == 'payroll' ? 'active' : '' ?>">
+                <i class="fa-solid fa-users-gear"></i>Payroll
+            </a>
+            <a href="dashboard.php?page=reports" class="nav-link <?= $page == 'reports' ? 'active' : '' ?>">
+                <i class="fa-solid fa-chart-line"></i>Reports
+            </a>
+            <a href="dashboard.php?page=customers" class="nav-link <?= $page == 'customers' ? 'active' : '' ?>">
+                <i class="fa-solid fa-address-book"></i>Customers
+            </a>
+            <?php endif; ?>
+            <a href="dashboard.php?page=pos" class="nav-link <?= $page == 'pos' ? 'active' : '' ?>">
+                <i class="fa-solid fa-cash-register"></i>Billing
+            </a>
+        </nav>
+        <div class="px-3 mt-auto mb-4">
+            <a href="../logout.php" class="nav-link logout-link">
+                <i class="fa-solid fa-right-from-bracket"></i>Log Out
+            </a>
         </div>
     </div>
 </div>

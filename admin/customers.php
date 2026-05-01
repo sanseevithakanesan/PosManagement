@@ -78,86 +78,149 @@ if(isset($_GET['edit'])){
 $customers = $pdo->query("SELECT * FROM customers ORDER BY id DESC")->fetchAll();
 ?>
 
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+
+<style>
+    /* Modern UI Components */
+    .customers-header {
+        background: linear-gradient(135deg, #00cec9 0%, #0984e3 100%);
+        padding: 25px;
+        border-radius: 15px;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 20px rgba(0, 206, 201, 0.15);
+    }
+    .modern-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    
+    .action-circle-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        transition: all 0.2s;
+        border: none;
+        margin: 0 2px;
+    }
+    .btn-edit-cust { background: #eff6ff; color: #3b82f6; }
+    .btn-edit-cust:hover { background: #3b82f6; color: white; }
+    .btn-delete-cust { background: #fef2f2; color: #ef4444; }
+    .btn-delete-cust:hover { background: #ef4444; color: white; }
+</style>
+
+<div class="customers-header d-flex justify-content-between align-items-center">
     <div>
-        <h3 class="mb-0 text-dark fw-bold">Customers</h3>
-        <p class="text-muted small mb-0">Manage customer details and contact profiles.</p>
+        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-address-book me-2"></i> Client Management</h3>
+        <p class="mb-0 opacity-75">Customer Profiles and Relationship Data</p>
+    </div>
+    <a href="dashboard.php?page=customers" class="btn btn-light fw-bold px-4 <?= $edit ? '' : 'disabled opacity-50' ?>">
+        <i class="fa-solid fa-plus-circle me-1 text-info"></i> Register New Client
+    </a>
+</div>
+
+
+<!-- FORM -->
+<div class="card modern-card mb-5">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-4 text-dark"><?= $edit ? '<i class="fa-solid fa-user-edit text-info me-2"></i>Update Client Profile' : '<i class="fa-solid fa-user-plus text-info me-2"></i>Register New Client' ?></h5>
+        <form method="POST">
+            <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
+            
+            <div class="row g-4 text-start">
+                <div class="col-md-4">
+                    <label class="form-label text-muted small fw-bold">Full Name *</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-user text-muted"></i></span>
+                        <input type="text" name="name" class="form-control border-light" placeholder="e.g. John Doe" value="<?= htmlspecialchars($edit['name'] ?? '') ?>" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted small fw-bold">Contact Connection *</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-mobile-screen text-muted"></i></span>
+                        <input type="text" name="phone" class="form-control border-light" placeholder="e.g. 07XXXXXXXX" value="<?= htmlspecialchars($edit['phone'] ?? '') ?>" required>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-muted small fw-bold">Email Interface</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-envelope text-muted"></i></span>
+                        <input type="email" name="email" class="form-control border-light" placeholder="client@example.com" value="<?= htmlspecialchars($edit['email'] ?? '') ?>">
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label text-muted small fw-bold">Geographic Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fa-solid fa-location-dot text-muted"></i></span>
+                        <textarea name="address" class="form-control border-light" rows="2" placeholder="Complete physical location details..."><?= htmlspecialchars($edit['address'] ?? '') ?></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 d-flex align-items-center">
+                <button class="btn btn-info btn-lg px-5 fw-bold text-white shadow-sm" name="<?= $edit ? 'update' : 'add' ?>">
+                    <?= $edit ? '<i class="fa-solid fa-save me-2"></i>Update Entry' : '<i class="fa-solid fa-check-circle me-2"></i>Confirm Registration' ?>
+                </button>
+                <?php if($edit): ?>
+                    <a href="dashboard.php?page=customers" class="btn btn-light btn-lg border ms-3">Discard Changes</a>
+                <?php endif; ?>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- FORM -->
-<div class="card content-card p-4 mb-4 shadow-sm border-0 border-start border-4 border-primary">
-    <h5 class="mb-3 text-secondary"><?= $edit ? 'Edit Customer Profile' : 'Add New Customer' ?></h5>
-    <form method="POST">
-        <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
-        
-        <div class="row g-3 text-start">
-            <div class="col-md-4">
-                <label class="form-label text-muted small fw-bold">Customer Name *</label>
-                <input type="text" name="name" class="form-control"
-                       placeholder="Full Name"
-                       value="<?= htmlspecialchars($edit['name'] ?? '') ?>" required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label text-muted small fw-bold">Phone Number *</label>
-                <input type="text" name="phone" class="form-control"
-                       placeholder="e.g. 0773029020"
-                       value="<?= htmlspecialchars($edit['phone'] ?? '') ?>" required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label text-muted small fw-bold">Email Address</label>
-                <input type="email" name="email" class="form-control"
-                       placeholder="name@example.com"
-                       value="<?= htmlspecialchars($edit['email'] ?? '') ?>">
-            </div>
-            <div class="col-md-12">
-                <label class="form-label text-muted small fw-bold">Physical Address</label>
-                <textarea name="address" class="form-control" rows="2"
-                          placeholder="Complete address/location"><?= htmlspecialchars($edit['address'] ?? '') ?></textarea>
-            </div>
-        </div>
-
-        <div class="mt-4 pt-3 border-top d-flex align-items-center justify-content-start">
-            <button class="btn btn-primary px-4 fw-bold shadow-sm" name="<?= $edit ? 'update' : 'add' ?>">
-                <?= $edit ? 'Save Changes' : 'Register Customer' ?>
-            </button>
-            <?php if($edit): ?>
-                <a href="dashboard.php?page=customers" class="btn btn-white text-secondary ms-3 border shadow-sm">Cancel Editing</a>
-            <?php endif; ?>
-        </div>
-    </form>
-</div>
 
 <!-- TABLE -->
-<div class="card content-card p-3 shadow-sm border-0">
+<div class="card modern-card overflow-hidden">
+    <div class="card-header bg-white py-3 border-0">
+        <h6 class="mb-0 fw-bold text-muted text-uppercase small">Client Directory</h6>
+    </div>
     <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle mb-0 bg-white">
-            <thead class="table-light text-muted small text-uppercase">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-muted small text-uppercase">
                 <tr>
-                    <th>Name</th>
-                    <th>Phone</th>
-                    <th>Email</th>
-                    <th>Address</th>
-                    <th class="text-center" style="width: 150px;">Action</th>
+                    <th class="ps-4">Full Name</th>
+                    <th>Contact Phone</th>
+                    <th>Email Address</th>
+                    <th>Physical Location</th>
+                    <th class="text-end pe-4">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach($customers as $c): ?>
                 <tr>
-                    <td class="text-dark fw-bold"><?= htmlspecialchars($c['name']) ?></td>
-                    <td><?= htmlspecialchars($c['phone']) ?></td>
-                    <td class="text-muted"><?= htmlspecialchars($c['email'] ?: 'N/A') ?></td>
-                    <td class="text-muted"><small><?= htmlspecialchars($c['address'] ?: 'N/A') ?></small></td>
-                    <td>
-                        <div class="d-flex justify-content-center gap-2">
-                            <a href="dashboard.php?page=customers&edit=<?= $c['id'] ?>" class="btn btn-sm btn-outline-primary shadow-sm px-3 text-decoration-none">Edit</a>
-                            <a href="dashboard.php?page=customers&delete=<?= $c['id'] ?>" onclick="return confirm('Delete this customer profile?')" class="btn btn-sm btn-outline-danger shadow-sm px-3 text-decoration-none">Delete</a>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-info bg-opacity-10 text-info p-2 me-3" style="width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;">
+                                <i class="fa-solid fa-user-tag fs-5"></i>
+                            </div>
+                            <div class="text-dark fw-bold fs-6"><?= htmlspecialchars($c['name']) ?></div>
                         </div>
+                    </td>
+                    <td><span class="fw-semibold text-dark"><?= htmlspecialchars($c['phone']) ?></span></td>
+                    <td class="text-muted small"><?= htmlspecialchars($c['email'] ?: 'N/A') ?></td>
+                    <td class="text-muted small" style="max-width: 250px;"><i class="fa-solid fa-location-arrow me-1 opacity-50"></i><?= htmlspecialchars($c['address'] ?: 'N/A') ?></td>
+                    <td class="text-end pe-4">
+                        <a href="dashboard.php?page=customers&edit=<?= $c['id'] ?>" class="action-circle-btn btn-edit-cust" title="Edit Profile">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                        <a href="dashboard.php?page=customers&delete=<?= $c['id'] ?>" 
+                           onclick="return confirm('Permanently delete this customer record?')" 
+                           class="action-circle-btn btn-delete-cust" title="Delete Profile">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
                 <?php if(empty($customers)): ?>
-                    <tr><td colspan="6" class="text-center text-muted py-4">No customers registered yet.</td></tr>
+                    <tr><td colspan="5" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-users-slash fs-1 opacity-25 mb-3 d-block"></i>
+                        No registered clients found.
+                    </td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
