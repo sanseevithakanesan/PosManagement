@@ -252,7 +252,7 @@ if(isset($_POST['email'])){//uiuiuoi
         </div>
 
         <p class="copyright-text">
-            &copy; 2026 Latest Login Form. All rights reserved. Design by <a href="#" class="text-white text-decoration-none opacity-75">YourTeam</a>
+            &copy; 2026 Latest Login Form. All rights reserved. Design by <a href="#" class="text-white text-decoration-none opacity-75">sandigicore</a>
         </p>
     </div>
 

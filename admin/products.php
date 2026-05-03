@@ -5,31 +5,22 @@ require_once dirname(__DIR__) . "/includes/product_media.php";
 ensure_product_extended_schema($pdo);
 
 /* =====================
-   DELETE WITH CHECK
+   SOFT DELETE
 ===================== */
 if(isset($_GET['delete'])){
     $productId = $_GET['delete'];
     
     try {
-        // First check if product exists in any orders
-        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM order_items WHERE product_id = ?");
-        $checkStmt->execute([$productId]);
-        $orderCount = $checkStmt->fetchColumn();
+        // We use soft delete (setting deleted_at) instead of hard delete 
+        // to preserve order history and bypass foreign key constraints
+        $stmt = $pdo->prepare("UPDATE products SET deleted_at = NOW() WHERE id=?");
+        $stmt->execute([$productId]);
         
-        if($orderCount > 0) {
-            // Product is used in orders - cannot delete
-            $_SESSION['message'] = "❌ Cannot delete this product! It is used in {$orderCount} order(s). Please remove the orders first or contact administrator.";
-            $_SESSION['message_type'] = "danger";
-        } else {
-            // Safe to delete
-            $stmt = $pdo->prepare("DELETE FROM products WHERE id=?");
-            $stmt->execute([$productId]);
-            $_SESSION['message'] = "✅ Product deleted successfully!";
-            $_SESSION['message_type'] = "success";
-        }
+        $_SESSION['message'] = "✅ Product removed successfully! (Archived to preserve history)";
+        $_SESSION['message_type'] = "success";
     } catch(PDOException $e) {
         // Handle any database errors
-        $_SESSION['message'] = "❌ Error: Cannot delete this product. It may be referenced in orders or other records.";
+        $_SESSION['message'] = "❌ Error: Could not remove this product. " . $e->getMessage();
         $_SESSION['message_type'] = "danger";
     }
     
@@ -46,12 +37,12 @@ $imgSelect = '(SELECT pi.file_path FROM product_images pi WHERE pi.product_id = 
 
 if($search != ''){
     $stmt = $pdo->prepare("SELECT p.*, {$imgSelect} AS image_path FROM products p
-        WHERE p.name LIKE ? OR p.barcode LIKE ?
+        WHERE (p.name LIKE ? OR p.barcode LIKE ?) AND p.deleted_at IS NULL
         ORDER BY p.id DESC");
     $stmt->execute(["%$search%","%$search%"]);
     $products = $stmt->fetchAll();
 }else{
-    $products = $pdo->query("SELECT p.*, {$imgSelect} AS image_path FROM products p ORDER BY p.id DESC")->fetchAll();
+    $products = $pdo->query("SELECT p.*, {$imgSelect} AS image_path FROM products p WHERE p.deleted_at IS NULL ORDER BY p.id DESC")->fetchAll();
 }
 
 /* categories dropdown */
@@ -117,6 +108,13 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
     .btn-delete-sec { background: #fef2f2; color: #ef4444; }
     .btn-delete-sec:hover { background: #ef4444; color: white; }
 
+    /* Touch Friendly Buttons */
+    .btn-lg-touch {
+        width: 48px !important;
+        height: 48px !important;
+        font-size: 1.2rem !important;
+    }
+
     /* Modern Modal */
     .modern-modal-content {
         border-radius: 16px;
@@ -138,12 +136,12 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
 </style>
 
 
-<div class="products-header d-flex justify-content-between align-items-center">
+<div class="products-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
     <div>
         <h3 class="mb-1 fw-bold"><i class="fa-solid fa-boxes-stacked me-2"></i> Products</h3>
         <p class="mb-0 opacity-75">Inventory and SKU Management</p>
     </div>
-    <a href="product_create.php" class="btn btn-light btn-lg fw-bold px-4">
+    <a href="product_create.php" class="btn btn-light btn-lg fw-bold px-4 py-2 py-sm-3 rounded-4 shadow-sm">
         <i class="fa-solid fa-plus-circle me-2 text-primary"></i> New Product
     </a>
 </div>
@@ -153,20 +151,22 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
     <div class="card-body p-3">
         <form method="GET">
             <input type="hidden" name="page" value="products">
-            <div class="input-group input-group-lg border-0 bg-light rounded-pill px-3">
-                <span class="input-group-text bg-transparent border-0 text-muted">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </span>
-                <input type="text" name="search"
-                       class="form-control bg-transparent border-0"
-                       placeholder="Search product name or scan barcode..."
-                       value="<?= htmlspecialchars($search) ?>">
-                <?php if($search != ''): ?>
-                    <a href="dashboard.php?page=products" class="btn btn-transparent border-0 text-muted">
-                        <i class="fa-solid fa-times-circle"></i>
-                    </a>
-                <?php endif; ?>
-                <button class="btn btn-primary rounded-pill px-4 mx-1" type="submit">Search</button>
+            <div class="d-flex flex-column flex-sm-row gap-2">
+                <div class="input-group input-group-lg border-0 bg-light rounded-pill px-3 flex-grow-1">
+                    <span class="input-group-text bg-transparent border-0 text-muted">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" name="search"
+                           class="form-control bg-transparent border-0"
+                           placeholder="Search name or barcode..."
+                           value="<?= htmlspecialchars($search) ?>">
+                    <?php if($search != ''): ?>
+                        <a href="dashboard.php?page=products" class="btn btn-transparent border-0 text-muted">
+                            <i class="fa-solid fa-times-circle"></i>
+                        </a>
+                    <?php endif; ?>
+                </div>
+                <button class="btn btn-primary rounded-pill px-5 py-3 py-sm-2 shadow-sm fw-bold" type="submit">Search</button>
             </div>
         </form>
     </div>
@@ -181,7 +181,7 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
     </div>
     
     <?php if(count($products) > 0): ?>
-        <div class="table-responsive">
+        <div class="table-responsive table-responsive-stack">
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light text-muted small text-uppercase">
                     <tr>
@@ -217,37 +217,39 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll();
                     ?>
                     
                     <tr>
-                        <td class="ps-4">
-                            <img src="<?= htmlspecialchars(product_image_url($p['image_path'] ?? null)) ?>"
-                                 alt="" class="img-preview-lg">
+                        <td class="ps-4" data-label="Image">
+                            <div class="d-flex justify-content-end justify-content-md-start">
+                                <img src="<?= htmlspecialchars(product_image_url($p['image_path'] ?? null)) ?>"
+                                     alt="" class="img-preview-lg">
+                            </div>
                         </td>
-                        <td>
+                        <td data-label="Product Details">
                             <div class="fw-bold text-dark"><?= htmlspecialchars($p['name']) ?></div>
                             <small class="text-muted"><i class="fa-solid fa-barcode me-1"></i> <?= htmlspecialchars($p['barcode'] ?: 'No Barcode') ?></small>
                         </td>
-                        <td>
+                        <td data-label="Pricing">
                             <div class="fw-semibold text-primary">Rs. <?= number_format($p['price'], 2) ?></div>
                         </td>
-                        <td>
-                            <div class="d-flex align-items-center mb-1">
+                        <td data-label="Inventory">
+                            <div class="d-flex align-items-center justify-content-end justify-content-md-start mb-1">
                                 <span class="fw-bold me-2"><?= $p['stock'] ?></span>
                                 <span class="stock-badge <?= $stockBadgeClass ?>"><?= $stockText ?></span>
                             </div>
                         </td>
-                        <td>
+                        <td data-label="Category">
                             <span class="badge bg-light text-muted border"><?= htmlspecialchars($catName ?: 'General') ?></span>
                         </td>
-                        <td class="text-center pe-4">
-                            <div class="action-group d-flex justify-content-center">
+                        <td class="text-center pe-4" data-label="Actions">
+                            <div class="action-group d-flex justify-content-center justify-content-md-center gap-3 py-2 py-md-0">
                                 <?php if (!empty($p['barcode'])): ?>
-                                    <a href="print_barcode.php?id=<?= (int)$p['id'] ?>" target="_blank" class="btn btn-print" title="Print Barcode">
+                                    <a href="print_barcode.php?id=<?= (int)$p['id'] ?>" target="_blank" class="btn btn-print btn-lg-touch" title="Print Barcode">
                                         <i class="fa-solid fa-print"></i>
                                     </a>
                                 <?php endif; ?>
-                                <a href="product_create.php?id=<?= (int)$p['id'] ?>" class="btn btn-edit-sec" title="Edit Item">
+                                <a href="product_create.php?id=<?= (int)$p['id'] ?>" class="btn btn-edit-sec btn-lg-touch" title="Edit Item">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>
-                                <button type="button" class="btn btn-delete-sec" 
+                                <button type="button" class="btn btn-delete-sec btn-lg-touch" 
                                         onclick="checkAndDelete(<?= $p['id'] ?>, '<?= addslashes(htmlspecialchars($p['name'])) ?>')" title="Delete Item">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
@@ -322,25 +324,24 @@ function checkAndDelete(productId, productName) {
     .then(response => response.json())
     .then(data => {
         if(data.has_orders) {
-            // Product has orders - cannot delete
-            messageDiv.innerHTML = `❌ Cannot delete "${productName}"!`;
+            // Product has orders - show warning but allow soft delete
+            messageDiv.innerHTML = `⚠️ Archive "${productName}"?`;
             orderInfoDiv.innerHTML = `
-                <strong>Reason:</strong> This product is used in ${data.order_count} order(s).<br><br>
-                <strong>Solution:</strong> Please remove all orders containing this product before deleting.<br>
-                <strong>Note:</strong> Deleting this product would affect your order history.
+                <strong>Note:</strong> This product is used in ${data.order_count} order(s).<br>
+                It will be hidden from the system but kept in records to preserve order history.
             `;
             orderInfoDiv.style.display = 'block';
-            confirmBtn.disabled = true;
-            confirmBtn.classList.add('btn-loading');
-            confirmBtn.innerHTML = 'Cannot Delete';
-            confirmBtn.style.backgroundColor = '#6c757d';
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('btn-loading');
+            confirmBtn.innerHTML = 'Yes, Archive';
+            confirmBtn.style.backgroundColor = '#f59e0b'; // Warning color
         } else {
-            // Product can be deleted
-            messageDiv.innerHTML = `⚠️ Are you sure you want to delete "${productName}"?`;
+            // Product can be safely soft-deleted (it's new/unused)
+            messageDiv.innerHTML = `⚠️ Remove "${productName}"?`;
             orderInfoDiv.style.display = 'none';
             confirmBtn.disabled = false;
             confirmBtn.classList.remove('btn-loading');
-            confirmBtn.innerHTML = 'Yes, Delete';
+            confirmBtn.innerHTML = 'Yes, Remove';
             confirmBtn.style.backgroundColor = '#dc3545';
         }
     })
@@ -389,28 +390,4 @@ setTimeout(function() {
     });
 }, 5000);
 </script>
-
-<?php
-// Handle AJAX request for checking orders
-if(isset($_GET['check_orders']) && isset($_GET['product_id'])) {
-    header('Content-Type: application/json');
-    $productId = $_GET['product_id'];
-    
-    try {
-        $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM order_items WHERE product_id = ?");
-        $checkStmt->execute([$productId]);
-        $orderCount = $checkStmt->fetchColumn();
-        
-        echo json_encode([
-            'has_orders' => ($orderCount > 0),
-            'order_count' => $orderCount
-        ]);
-    } catch(PDOException $e) {
-        echo json_encode([
-            'has_orders' => false,
-            'error' => $e->getMessage()
-        ]);
-    }
-    exit;
-}
-?>
+

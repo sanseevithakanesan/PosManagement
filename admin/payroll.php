@@ -36,6 +36,8 @@ $tab = $_GET['tab'] ?? 'employees';
 /* AJAX FOR PROCESSING SALARY PREVIEW */
 if(isset($_POST['ajax_employee_id'])) {
     $eid = (int)$_POST['ajax_employee_id'];
+    $month = $_POST['ajax_month'] ?? date('Y-m');
+    
     $emp = $pdo->prepare("SELECT base_salary FROM employees WHERE id = ?");
     $emp->execute([$eid]);
     $base = $emp->fetchColumn() ?: 0;
@@ -44,7 +46,17 @@ if(isset($_POST['ajax_employee_id'])) {
     $adv->execute([$eid]);
     $pending_adv = $adv->fetchColumn() ?: 0;
     
-    echo json_encode(['base' => $base, 'advances' => $pending_adv, 'net' => $base - $pending_adv]);
+    // Check if already paid for this month
+    $paid = $pdo->prepare("SELECT COUNT(*) FROM salary_payments WHERE employee_id = ? AND pay_month = ?");
+    $paid->execute([$eid, $month]);
+    $already_paid = $paid->fetchColumn() > 0;
+    
+    echo json_encode([
+        'base' => $base, 
+        'advances' => $pending_adv, 
+        'net' => $base - $pending_adv,
+        'already_paid' => $already_paid
+    ]);
     exit;
 }
 
@@ -109,6 +121,13 @@ if(isset($_POST['process_salary'])){
         $eid = (int)$_POST['employee_id'];
         $month = $_POST['pay_month']; // e.g. 2026-04
         
+        // Check for duplicate payment
+        $chk = $pdo->prepare("SELECT id FROM salary_payments WHERE employee_id = ? AND pay_month = ?");
+        $chk->execute([$eid, $month]);
+        if($chk->fetch()){
+            throw new Exception("Salary for this month has already been processed for this employee.");
+        }
+        
         // Fetch accurate data again to prevent tampering
         $emp = $pdo->prepare("SELECT base_salary FROM employees WHERE id = ?");
         $emp->execute([$eid]);
@@ -129,17 +148,6 @@ if(isset($_POST['process_salary'])){
         // 2. Mark pending advances as Deducted
         $pdo->prepare("UPDATE salary_advances SET status = 'Deducted' WHERE employee_id = ? AND status = 'Pending'")
             ->execute([$eid]);
-            
-        // 3. Log as a business Expense automatically? (Optional but highly recommended for accuracy)
-        // Let's create an expense entry automatically for the net paid amount + advances, 
-        // wait, the total expense to the company is the Base amount (net + advance).
-        try {
-            $eName = $pdo->query("SELECT name FROM employees WHERE id=$eid")->fetchColumn();
-            $pdo->prepare("INSERT INTO expenses(expense_category, description, amount) VALUES('Salaries', ?, ?)")
-                ->execute(["Salary payout for $eName ($month)", $net]); // We log net, as advances were already given (they should ideally be logged when given).
-        } catch(Exception $expE) { 
-            // Silent catch if expenses table is locked 
-        }
 
         $pdo->commit();
         $_SESSION['message'] = "Salary processed and advances deducted successfully!";
@@ -227,16 +235,27 @@ $payments = $stmtPay->fetchAll();
     /* Salary Slip Preview */
     .salary-slip-preview {
         background: #fff;
-        border: 2px dashed #e2e8f0;
+        border: 1px solid #e2e8f0;
         border-radius: 20px;
         padding: 30px;
         position: relative;
+        transition: all 0.3s ease;
+        min-height: 400px;
+    }
+    .salary-slip-preview.already-paid {
+        border-color: #ef4444;
+        background: #fef2f2;
     }
     .slip-metric-box {
         padding: 20px;
         background: #f8fafc;
         border-radius: 12px;
         text-align: center;
+        transition: all 0.2s;
+    }
+    .slip-metric-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     .slip-label { font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
 
@@ -255,14 +274,25 @@ $payments = $stmtPay->fetchAll();
     .btn-edit-sec:hover { background: #3b82f6; color: white; }
     .btn-delete-sec { background: #fef2f2; color: #ef4444; }
     .btn-delete-sec:hover { background: #ef4444; color: white; }
+
+    /* Empty State */
+    .payroll-empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8fafc;
+        border: 2px dashed #e2e8f0;
+        border-radius: 20px;
+        color: #94a3b8;
+    }
+    .payroll-empty-state i { font-size: 3rem; margin-bottom: 20px; opacity: 0.5; }
 </style>
 
-<div class="payroll-header d-flex justify-content-between align-items-center">
+<div class="payroll-header d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-4">
     <div>
-        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-users-gear me-2"></i> Payroll & Advances</h3>
+        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-users-gear me-2"></i> Payroll</h3>
         <p class="mb-0 opacity-75">Workforce Compensation and Salary Schedules</p>
     </div>
-    <div class="modern-pills-nav">
+    <div class="modern-pills-nav overflow-auto flex-nowrap shadow-sm">
         <a href="dashboard.php?page=payroll&tab=employees" class="btn <?= $tab == 'employees' ? 'btn-active' : 'btn-inactive' ?>">Staff</a>
         <a href="dashboard.php?page=payroll&tab=advances" class="btn <?= $tab == 'advances' ? 'btn-active' : 'btn-inactive' ?>">Advances</a>
         <a href="dashboard.php?page=payroll&tab=process" class="btn <?= $tab == 'process' ? 'btn-active' : 'btn-inactive' ?>">Run Payroll</a>
@@ -290,47 +320,47 @@ $payments = $stmtPay->fetchAll();
         $edit = $stmt->fetch();
     }
 ?>
-<div class="card modern-card mb-5">
-    <div class="card-body p-4">
-        <h5 class="fw-bold mb-4 text-dark"><?= $edit ? '<i class="fa-solid fa-user-edit text-primary me-2"></i>Modify Staff Profile' : '<i class="fa-solid fa-user-plus text-primary me-2"></i>Onboard New Staff' ?></h5>
+<div class="card modern-card mb-5 border-0">
+    <div class="card-body p-3 p-md-4">
+        <h5 class="fw-bold mb-4 text-dark"><?= $edit ? '<i class="fa-solid fa-user-edit text-primary me-2"></i>Modify Profile' : '<i class="fa-solid fa-user-plus text-primary me-2"></i>Onboard Staff' ?></h5>
         <form method="POST">
             <input type="hidden" name="id" value="<?= $edit['id'] ?? '' ?>">
             <div class="row g-4">
-                <div class="col-md-3">
+                <div class="col-12 col-md-6 col-lg-3">
                     <label class="form-label text-muted small fw-bold">Full Name *</label>
-                    <div class="input-group">
+                    <div class="input-group input-group-lg">
                         <span class="input-group-text bg-light border-0"><i class="fa-solid fa-user text-muted"></i></span>
-                        <input type="text" name="name" class="form-control border-light" value="<?= htmlspecialchars($edit['name'] ?? '') ?>" required>
+                        <input type="text" name="name" class="form-control border-0 bg-light" value="<?= htmlspecialchars($edit['name'] ?? '') ?>" required>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label text-muted small fw-bold">Phone Connection</label>
-                    <div class="input-group">
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label text-muted small fw-bold">Phone</label>
+                    <div class="input-group input-group-lg">
                         <span class="input-group-text bg-light border-0"><i class="fa-solid fa-phone text-muted"></i></span>
-                        <input type="text" name="phone" class="form-control border-light" value="<?= htmlspecialchars($edit['phone'] ?? '') ?>">
+                        <input type="text" name="phone" class="form-control border-0 bg-light" value="<?= htmlspecialchars($edit['phone'] ?? '') ?>">
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label text-muted small fw-bold">Monthly Base Salary (Rs) *</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-primary"><i class="fa-solid fa-money-bill-wave text-primary"></i></span>
-                        <input type="number" step="0.01" name="base_salary" class="form-control border-primary fw-bold text-primary" value="<?= htmlspecialchars($edit['base_salary'] ?? '') ?>" required>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label text-muted small fw-bold">Base Salary (Rs) *</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-primary-subtle border-0 text-primary"><i class="fa-solid fa-money-bill-wave"></i></span>
+                        <input type="number" step="0.01" name="base_salary" class="form-control border-0 bg-light fw-bold text-primary" value="<?= htmlspecialchars($edit['base_salary'] ?? '') ?>" required>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label text-muted small fw-bold">Active Status *</label>
-                    <select name="status" class="form-select border-light fw-bold" required>
-                        <option value="Active" <?= (isset($edit['status']) && $edit['status'] === 'Active') ? 'selected' : '' ?>>Currently Active</option>
-                        <option value="Inactive" <?= (isset($edit['status']) && $edit['status'] === 'Inactive') ? 'selected' : '' ?>>Inactive / Left</option>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label text-muted small fw-bold">Status *</label>
+                    <select name="status" class="form-select form-select-lg border-0 bg-light fw-bold" required>
+                        <option value="Active" <?= (isset($edit['status']) && $edit['status'] === 'Active') ? 'selected' : '' ?>>Active</option>
+                        <option value="Inactive" <?= (isset($edit['status']) && $edit['status'] === 'Inactive') ? 'selected' : '' ?>>Inactive</option>
                     </select>
                 </div>
             </div>
-            <div class="mt-4 pt-2">
+            <div class="mt-4 d-flex flex-column flex-sm-row gap-2">
                 <button class="btn btn-primary btn-lg px-5 fw-bold shadow-sm" name="save_employee">
-                    <?= $edit ? '<i class="fa-solid fa-save me-2"></i>Update Staff' : '<i class="fa-solid fa-check-circle me-2"></i>Register Staff' ?>
+                    <?= $edit ? '<i class="fa-solid fa-save me-2"></i>Update' : '<i class="fa-solid fa-check-circle me-2"></i>Register' ?>
                 </button>
                 <?php if($edit): ?>
-                    <a href="dashboard.php?page=payroll&tab=employees" class="btn btn-light btn-lg border ms-2">Cancel</a>
+                    <a href="dashboard.php?page=payroll&tab=employees" class="btn btn-light btn-lg px-4 border-0">Cancel</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -341,43 +371,51 @@ $payments = $stmtPay->fetchAll();
     <div class="card-header bg-white py-3 border-0">
         <h6 class="mb-0 fw-bold text-muted text-uppercase small">Staff Directory</h6>
     </div>
-    <div class="table-responsive">
+    <div class="table-responsive table-responsive-stack">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light text-muted small text-uppercase">
                 <tr>
-                    <th class="ps-4">Employee Information</th>
-                    <th>Contact Details</th>
-                    <th>Salary Structure</th>
-                    <th class="text-center">Active Status</th>
+                    <th class="ps-4">Employee</th>
+                    <th>Contact</th>
+                    <th>Salary</th>
+                    <th class="text-center">Status</th>
                     <th class="text-end pe-4">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach($employees as $e): ?>
                 <tr>
-                    <td class="ps-4">
+                    <td class="ps-4" data-label="Employee">
                         <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 me-3" style="width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;">
+                            <div class="rounded-circle bg-primary bg-opacity-10 text-primary p-2 me-3 d-none d-md-flex" style="width:40px;height:40px;align-items:center;justify-content:center;">
                                 <i class="fa-solid fa-user-circle fs-5"></i>
                             </div>
                             <div class="fw-bold text-dark fs-6"><?= htmlspecialchars($e['name']) ?></div>
                         </div>
                     </td>
-                    <td><span class="text-muted"><i class="fa-solid fa-phone-flip me-2 opacity-50"></i><?= htmlspecialchars($e['phone'] ?: 'N/A') ?></span></td>
-                    <td><span class="fw-bold text-primary fs-6">Rs. <?= number_format($e['base_salary'], 2) ?></span></td>
-                    <td class="text-center">
-                        <span class="status-pill <?= $e['status'] == 'Active' ? 'pill-active' : 'pill-inactive' ?>">
-                            <?= $e['status'] ?>
-                        </span>
+                    <td data-label="Contact">
+                        <span class="text-muted"><i class="fa-solid fa-phone-flip me-2 opacity-50 d-none d-md-inline"></i><?= htmlspecialchars($e['phone'] ?: 'N/A') ?></span>
                     </td>
-                    <td class="text-end pe-4">
-                        <a href="dashboard.php?page=payroll&tab=employees&edit=<?= $e['id'] ?>" class="action-circle-btn btn-edit-sec" title="Edit Profile">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
-                        <a href="dashboard.php?page=payroll&tab=employees&delete_employee=<?= $e['id'] ?>" class="action-circle-btn btn-delete-sec" 
-                           onclick="return confirm('WARNING: Permanently delete this employee and all related history?')" title="Delete Profile">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </a>
+                    <td data-label="Salary">
+                        <span class="fw-bold text-primary fs-6">Rs. <?= number_format($e['base_salary'], 2) ?></span>
+                    </td>
+                    <td data-label="Status">
+                        <div class="d-flex justify-content-end justify-content-md-center">
+                            <span class="status-pill <?= $e['status'] == 'Active' ? 'pill-active' : 'pill-inactive' ?>">
+                                <?= $e['status'] ?>
+                            </span>
+                        </div>
+                    </td>
+                    <td class="text-end pe-4" data-label="Actions">
+                        <div class="d-flex justify-content-center justify-content-md-end gap-3 py-2 py-md-0">
+                            <a href="dashboard.php?page=payroll&tab=employees&edit=<?= $e['id'] ?>" class="action-circle-btn btn-edit-sec" style="width: 48px; height: 48px; font-size: 1.2rem;" title="Edit Profile">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                            <a href="dashboard.php?page=payroll&tab=employees&delete_employee=<?= $e['id'] ?>" class="action-circle-btn btn-delete-sec" style="width: 48px; height: 48px; font-size: 1.2rem;"
+                               onclick="return confirm('WARNING: Permanently delete this employee and all related history?')" title="Delete Profile">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -400,32 +438,32 @@ $payments = $stmtPay->fetchAll();
         ORDER BY a.id DESC
     ")->fetchAll();
 ?>
-<div class="card modern-card mb-5 border-start border-4 border-warning shadow-sm">
-    <div class="card-body p-4">
-        <h5 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-hand-holding-dollar text-warning me-2"></i> Issue Salary Advance</h5>
+<div class="card modern-card mb-5 border-start border-4 border-warning shadow-sm border-0">
+    <div class="card-body p-3 p-md-4">
+        <h5 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-hand-holding-dollar text-warning me-2"></i> Issue Advance</h5>
         <form method="POST">
-            <div class="row g-4 align-items-end">
-                <div class="col-md-5">
-                    <label class="form-label text-muted small fw-bold">Beneficiary Employee *</label>
-                    <select name="employee_id" class="form-select form-select-lg border-light fw-semibold" required>
-                        <option value="">Select active staff member...</option>
+            <div class="row g-4">
+                <div class="col-12 col-md-6">
+                    <label class="form-label text-muted small fw-bold">Beneficiary *</label>
+                    <select name="employee_id" class="form-select form-select-lg border-0 bg-light fw-semibold" required>
+                        <option value="">Select Staff...</option>
                         <?php foreach($activeEmployees as $e): ?>
-                            <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['name']) ?> (Base Salary: Rs <?= number_format($e['base_salary']) ?>)</option>
+                            <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label text-muted small fw-bold">Advance Fund (Rs) *</label>
+                <div class="col-12 col-md-6">
+                    <label class="form-label text-muted small fw-bold">Amount (Rs) *</label>
                     <div class="input-group input-group-lg">
-                        <span class="input-group-text bg-light border-warning"><i class="fa-solid fa-coins text-warning"></i></span>
-                        <input type="number" step="0.01" name="amount" class="form-control border-warning fw-bold text-dark" placeholder="0.00" required>
+                        <span class="input-group-text bg-warning-subtle border-0 text-warning"><i class="fa-solid fa-coins"></i></span>
+                        <input type="number" step="0.01" name="amount" class="form-control border-0 bg-light fw-bold text-dark" placeholder="0.00" required>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <button class="btn btn-warning btn-lg w-100 fw-bold py-3 shadow-sm" name="save_advance">
-                        <i class="fa-solid fa-share-from-square me-2"></i>Disburse Advance
-                    </button>
-                </div>
+            </div>
+            <div class="mt-4">
+                <button class="btn btn-warning btn-lg px-5 fw-bold py-3 shadow-sm w-100 w-sm-auto" name="save_advance">
+                    <i class="fa-solid fa-share-from-square me-2"></i>Disburse Advance
+                </button>
             </div>
         </form>
     </div>
@@ -435,41 +473,46 @@ $payments = $stmtPay->fetchAll();
     <div class="card-header bg-white py-3 border-0">
         <h6 class="mb-0 fw-bold text-muted text-uppercase small">Recent Advance Disbursements</h6>
     </div>
-    <div class="table-responsive">
+    <div class="table-responsive table-responsive-stack">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light text-muted small text-uppercase">
                 <tr>
-                    <th class="ps-4">Disbursement Date</th>
-                    <th>Beneficiary Staff</th>
-                    <th>Issued Amount</th>
-                    <th class="text-center">Deduction Status</th>
-                    <th class="text-end pe-4">Manage</th>
+                    <th class="ps-4">Date</th>
+                    <th>Staff Member</th>
+                    <th>Amount</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end pe-4">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach($advances as $a): ?>
                 <tr>
-                    <td class="ps-4">
+                    <td class="ps-4" data-label="Date">
                         <div class="fw-bold text-dark"><?= date('d M Y', strtotime($a['advance_date'])) ?></div>
-                        <div class="small text-muted">Authorized Entry</div>
                     </td>
-                    <td>
+                    <td data-label="Staff">
                         <div class="fw-bold text-dark"><?= htmlspecialchars($a['emp_name']) ?></div>
                     </td>
-                    <td><span class="fw-bold text-warning fs-6">Rs. <?= number_format($a['amount'], 2) ?></span></td>
-                    <td class="text-center">
-                        <span class="status-pill <?= $a['status'] == 'Pending' ? 'pill-pending' : 'pill-deducted' ?>">
-                            <i class="fa-solid <?= $a['status'] == 'Pending' ? 'fa-clock' : 'fa-check-circle' ?> me-1"></i><?= $a['status'] == 'Pending' ? 'Outstanding' : 'Full Deducted' ?>
-                        </span>
+                    <td data-label="Amount">
+                        <span class="fw-bold text-warning fs-6">Rs. <?= number_format($a['amount'], 2) ?></span>
                     </td>
-                    <td class="text-end pe-4">
-                        <?php if($a['status'] == 'Pending'): ?>
-                            <a href="dashboard.php?page=payroll&tab=advances&delete_advance=<?= $a['id'] ?>" class="btn btn-sm btn-outline-danger px-3 fw-bold" onclick="return confirm('Revoke this pending advance disbursement?');">
-                                <i class="fa-solid fa-rotate-left me-1"></i>Revoke
-                            </a>
-                        <?php else: ?>
-                            <span class="text-muted small italic"><i class="fa-solid fa-lock me-1"></i> Audited</span>
-                        <?php endif; ?>
+                    <td data-label="Status">
+                        <div class="d-flex justify-content-end justify-content-md-center">
+                            <span class="status-pill <?= $a['status'] == 'Pending' ? 'pill-pending' : 'pill-deducted' ?>">
+                                <i class="fa-solid <?= $a['status'] == 'Pending' ? 'fa-clock' : 'fa-check-circle' ?> me-1"></i><?= $a['status'] == 'Pending' ? 'Outstanding' : 'Deducted' ?>
+                            </span>
+                        </div>
+                    </td>
+                    <td class="text-end pe-4" data-label="Actions">
+                        <div class="d-flex justify-content-center justify-content-md-end py-2 py-md-0">
+                            <?php if($a['status'] == 'Pending'): ?>
+                                <a href="dashboard.php?page=payroll&tab=advances&delete_advance=<?= $a['id'] ?>" class="btn btn-lg btn-outline-danger px-4 fw-bold rounded-pill" onclick="return confirm('Revoke this pending advance disbursement?');">
+                                    <i class="fa-solid fa-rotate-left me-1"></i>Revoke
+                                </a>
+                            <?php else: ?>
+                                <span class="text-muted small italic"><i class="fa-solid fa-lock me-1"></i> Audited</span>
+                            <?php endif; ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -484,76 +527,101 @@ $payments = $stmtPay->fetchAll();
 
 <?php elseif($tab == 'process'): ?>
 <!-- PROCESS PAYROLL TAB -->
-<?php
-    $payments = $pdo->query("
-        SELECT p.*, e.name as emp_name 
-        FROM salary_payments p 
-        JOIN employees e ON p.employee_id = e.id 
-        ORDER BY p.id DESC
-    ")->fetchAll();
-?>
-<div class="card modern-card mb-5 border-start border-4 border-success shadow-sm">
-    <div class="card-body p-4">
-        <h5 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-calculator text-success me-2"></i> Finalize Monthly Compensation</h5>
-        <form method="POST" id="salary_process_form">
-            <div class="row g-4 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label text-muted small fw-bold">Staff Member *</label>
-                    <select name="employee_id" id="payroll_emp" class="form-select form-select-lg border-light fw-bold" required>
-                        <option value="">Choose employee...</option>
-                        <?php foreach($activeEmployees as $e): ?>
-                            <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+<div class="row g-4 mb-5">
+    <div class="col-lg-4">
+        <div class="card modern-card border-0 shadow-sm sticky-top" style="top: 20px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-calculator text-success me-2"></i> Payroll Engine</h5>
+                <form method="POST" id="salary_process_form">
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">Select Staff Member</label>
+                        <select name="employee_id" id="payroll_emp" class="form-select form-select-lg border-0 bg-light fw-bold" required>
+                            <option value="">Choose Employee...</option>
+                            <?php foreach($activeEmployees as $e): ?>
+                                <option value="<?= $e['id'] ?>"><?= htmlspecialchars($e['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">Payment Month</label>
+                        <input type="month" name="pay_month" id="payroll_month" class="form-control form-control-lg border-0 bg-light fw-bold" value="<?= date('Y-m') ?>" required>
+                    </div>
+                    <div class="alert alert-info border-0 small mb-0">
+                        <i class="fa-solid fa-circle-info me-2"></i> Select an employee to automatically calculate earnings and deductions for the chosen month.
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div id="salary_preview_box" class="salary-slip-preview shadow-sm h-100 d-flex flex-column justify-content-center">
+            <!-- Initial State -->
+            <div id="preview_empty" class="payroll-empty-state">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+                <h5 class="fw-bold text-dark">Awaiting Selection</h5>
+                <p class="mb-0">Please select a staff member to generate a salary preview.</p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="preview_loading" class="text-center d-none py-5">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label text-muted small fw-bold">Remuneration Month *</label>
-                    <input type="month" name="pay_month" class="form-control form-control-lg border-light" value="<?= date('Y-m') ?>" required>
+                <p class="mt-3 text-muted fw-bold">Calculating payroll data...</p>
+            </div>
+
+            <!-- Result State -->
+            <div id="preview_content" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom dashed">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark" id="prev_name_display">Staff Name</h5>
+                        <p class="text-muted small mb-0" id="prev_month_display">Month</p>
+                    </div>
+                    <div id="status_badge_container">
+                        <div class="badge bg-success bg-opacity-10 text-success px-3 py-2 fw-bold">READY TO DISBURSE</div>
+                    </div>
                 </div>
-                <div class="col-md-5">
-                    <button type="button" class="btn btn-outline-primary btn-lg w-100 fw-bold py-3 mt-2 mt-md-0" id="preview_salary_btn">
-                        <i class="fa-solid fa-magnifying-glass-chart me-2"></i>Calculate & Preview Slip
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="slip-metric-box">
+                            <div class="slip-label">Base Salary</div>
+                            <h4 class="text-dark fw-bold mb-0" id="prev_base">Rs. 0.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="slip-metric-box">
+                            <div class="slip-label text-danger">Deductions</div>
+                            <h4 class="text-danger fw-bold mb-0" id="prev_adv">- Rs. 0.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="slip-metric-box bg-success bg-opacity-10 border border-success border-opacity-25">
+                            <div class="slip-label text-success">Net Payout</div>
+                            <h3 class="text-success fw-bold mb-0" id="prev_net">Rs. 0.00</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="deduction_details" class="mb-4 d-none">
+                    <h6 class="small fw-bold text-muted text-uppercase mb-3">Deduction Breakdown</h6>
+                    <div class="bg-light rounded-3 p-3">
+                        <div class="d-flex justify-content-between small">
+                            <span>Pending Advances</span>
+                            <span class="fw-bold text-danger" id="prev_adv_detail">Rs. 0.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-auto text-center" id="action_button_container">
+                    <button form="salary_process_form" class="btn btn-success btn-lg px-5 fw-bold py-3 shadow w-100" name="process_salary" 
+                            onclick="return confirm('Are you sure? This will permanently log this payout and mark all pending advances as deducted.');">
+                        <i class="fa-solid fa-check-double me-2"></i>Authorize & Log Payout
                     </button>
                 </div>
             </div>
-            
-            <div id="salary_preview_box" class="mt-5 d-none">
-                <div class="salary-slip-preview shadow-sm">
-                    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom dashed">
-                        <h5 class="fw-bold mb-0 text-muted"><i class="fa-solid fa-file-invoice-dollar me-2 text-primary"></i>PAYMENT ESTIMATE</h5>
-                        <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 fw-bold">READY TO DISBURSE</div>
-                    </div>
-                    
-                    <div class="row g-4">
-                        <div class="col-md-4">
-                            <div class="slip-metric-box">
-                                <div class="slip-label">Fixed Gross Base</div>
-                                <h3 class="text-dark fw-bold mb-0" id="prev_base">Rs. 0.00</h3>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="slip-metric-box">
-                                <div class="slip-label text-danger">Total Deductions</div>
-                                <h3 class="text-danger fw-bold mb-0" id="prev_adv">- Rs. 0.00</h3>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="slip-metric-box bg-success bg-opacity-10 border border-success border-opacity-25">
-                                <div class="slip-label text-success">Net Payable Total</div>
-                                <h2 class="text-success fw-bold mb-0" id="prev_net">Rs. 0.00</h2>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-5 text-center">
-                        <button class="btn btn-success btn-lg px-5 fw-bold py-3 shadow" name="process_salary" 
-                                onclick="return confirm('Are you sure? This will permanently log this payout and mark all pending advances as deducted.');">
-                            <i class="fa-solid fa-check-double me-2"></i>Authorize Net Payout
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -577,33 +645,34 @@ $payments = $stmtPay->fetchAll();
             </form>
         </div>
     </div>
-    <div class="table-responsive">
+    <div class="table-responsive table-responsive-stack">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light text-muted small text-uppercase">
                 <tr>
                     <th class="ps-4">Pay Month</th>
-                    <th>Staff Beneficiary</th>
-                    <th>Base Gross</th>
-                    <th class="text-danger">Total Deducted</th>
-                    <th class="text-success">Net Credited</th>
-                    <th class="text-end pe-4">Processed On</th>
+                    <th>Staff Member</th>
+                    <th>Gross Base</th>
+                    <th class="text-danger">Deductions</th>
+                    <th class="text-success">Net Paid</th>
+                    <th class="text-end pe-4">Date</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach($payments as $p): ?>
                 <tr>
-                    <td class="ps-4">
+                    <td class="ps-4" data-label="Month">
                         <span class="badge bg-light border text-dark fw-bold px-3 py-2"><?= htmlspecialchars($p['pay_month']) ?></span>
                     </td>
-                    <td>
+                    <td data-label="Beneficiary">
                         <div class="fw-bold text-dark fs-6"><?= htmlspecialchars($p['emp_name']) ?></div>
                     </td>
-                    <td class="text-muted">Rs. <?= number_format($p['base_amount'], 2) ?></td>
-                    <td class="text-danger fw-semibold">- Rs. <?= number_format($p['advances_deducted'], 2) ?></td>
-                    <td><span class="fw-bold text-success fs-6">Rs. <?= number_format($p['net_paid'], 2) ?></span></td>
-                    <td class="text-end pe-4 text-muted small">
+                    <td data-label="Base Gross" class="text-muted">Rs. <?= number_format($p['base_amount'], 2) ?></td>
+                    <td data-label="Deductions" class="text-danger fw-semibold">- Rs. <?= number_format($p['advances_deducted'], 2) ?></td>
+                    <td data-label="Net Paid">
+                        <span class="fw-bold text-success fs-6">Rs. <?= number_format($p['net_paid'], 2) ?></span>
+                    </td>
+                    <td class="text-end pe-4 text-muted small" data-label="Processed">
                         <div><?= date('d M Y', strtotime($p['payment_date'])) ?></div>
-                        <div><?= date('h:i A', strtotime($p['payment_date'])) ?></div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -617,41 +686,84 @@ $payments = $stmtPay->fetchAll();
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const previewBtn = document.getElementById('preview_salary_btn');
     const empSelect = document.getElementById('payroll_emp');
-    const previewBox = document.getElementById('salary_preview_box');
+    const monthInput = document.getElementById('payroll_month');
     
-    if(previewBtn) {
-        previewBtn.addEventListener('click', function() {
-            if(!empSelect.value) {
-                alert('Please select an employee member first to perform calculations.');
-                return;
+    const previewBox = document.getElementById('salary_preview_box');
+    const previewEmpty = document.getElementById('preview_empty');
+    const previewLoading = document.getElementById('preview_loading');
+    const previewContent = document.getElementById('preview_content');
+
+    function updatePreview() {
+        const eid = empSelect.value;
+        const month = monthInput.value;
+
+        if(!eid) {
+            previewEmpty.classList.remove('d-none');
+            previewLoading.classList.add('d-none');
+            previewContent.classList.add('d-none');
+            previewBox.classList.remove('already-paid');
+            return;
+        }
+
+        previewEmpty.classList.add('d-none');
+        previewLoading.classList.remove('d-none');
+        previewContent.classList.add('d-none');
+        previewBox.classList.remove('already-paid');
+
+        const formData = new FormData();
+        formData.append('ajax_employee_id', eid);
+        formData.append('ajax_month', month);
+
+        fetch('payroll.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            previewLoading.classList.add('d-none');
+            previewContent.classList.remove('d-none');
+
+            document.getElementById('prev_name_display').textContent = empSelect.options[empSelect.selectedIndex].text;
+            document.getElementById('prev_month_display').textContent = 'Payroll for ' + month;
+            
+            document.getElementById('prev_base').textContent = 'Rs. ' + parseFloat(data.base).toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('prev_adv').textContent = '- Rs. ' + parseFloat(data.advances).toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('prev_net').textContent = 'Rs. ' + parseFloat(data.net).toLocaleString(undefined, {minimumFractionDigits: 2});
+            
+            // Deductions detail
+            if(parseFloat(data.advances) > 0) {
+                document.getElementById('deduction_details').classList.remove('d-none');
+                document.getElementById('prev_adv_detail').textContent = 'Rs. ' + parseFloat(data.advances).toLocaleString(undefined, {minimumFractionDigits: 2});
+            } else {
+                document.getElementById('deduction_details').classList.add('d-none');
             }
-            
-            // Perform AJAX request to self
-            const formData = new FormData();
-            formData.append('ajax_employee_id', empSelect.value);
-            
-            fetch('payroll.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('prev_base').textContent = 'Rs. ' + parseFloat(data.base).toLocaleString(undefined, {minimumFractionDigits: 2});
-                document.getElementById('prev_adv').textContent = '- Rs. ' + parseFloat(data.advances).toLocaleString(undefined, {minimumFractionDigits: 2});
-                document.getElementById('prev_net').textContent = 'Rs. ' + parseFloat(data.net).toLocaleString(undefined, {minimumFractionDigits: 2});
-                previewBox.classList.remove('d-none');
-                
-                // Smooth scroll to preview
-                previewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Connection error while fetching employee payroll profile.');
-            });
+
+            const statusBadgeContainer = document.getElementById('status_badge_container');
+            const actionButtonContainer = document.getElementById('action_button_container');
+
+            if(data.already_paid) {
+                previewBox.classList.add('already-paid');
+                statusBadgeContainer.innerHTML = '<div class="badge bg-danger px-3 py-2 fw-bold"><i class="fa-solid fa-circle-check me-1"></i> ALREADY DISBURSED</div>';
+                actionButtonContainer.innerHTML = '<div class="alert alert-danger border-0 mb-0 fw-bold text-center"><i class="fa-solid fa-triangle-exclamation me-2"></i> This staff member has already been paid for the selected month.</div>';
+            } else {
+                statusBadgeContainer.innerHTML = '<div class="badge bg-success bg-opacity-10 text-success px-3 py-2 fw-bold">READY TO DISBURSE</div>';
+                actionButtonContainer.innerHTML = `<button form="salary_process_form" class="btn btn-success btn-lg px-5 fw-bold py-3 shadow w-100" name="process_salary" 
+                            onclick="return confirm('Are you sure? This will permanently log this payout and mark all pending advances as deducted.');">
+                        <i class="fa-solid fa-check-double me-2"></i>Authorize & Log Payout
+                    </button>`;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            previewLoading.classList.add('d-none');
+            previewEmpty.classList.remove('d-none');
+            previewEmpty.innerHTML = '<i class="fa-solid fa-circle-exclamation text-danger fs-1"></i><h5 class="fw-bold text-danger mt-3">Error</h5><p>Could not fetch payroll data.</p>';
         });
     }
+
+    if(empSelect) empSelect.addEventListener('change', updatePreview);
+    if(monthInput) monthInput.addEventListener('change', updatePreview);
 });
 </script>
 <?php endif; ?>

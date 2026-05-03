@@ -78,7 +78,7 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll
     }
 </style>
 
-<div class="category-header d-flex justify-content-between align-items-center">
+<div class="category-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
     <div>
         <h3 class="mb-1 fw-bold"><i class="fa-solid fa-layer-group me-2"></i> Categories</h3>
         <p class="mb-0 opacity-75">Manage your product classifications</p>
@@ -109,8 +109,8 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll
                     </div>
                 </div>
                 
-                <div class="col-md-3">
-                    <button class="btn <?= $edit ? 'btn-info text-white' : 'btn-primary' ?> btn-lg w-100 fw-bold py-2"
+                <div class="col-12 col-md-3">
+                    <button class="btn <?= $edit ? 'btn-info text-white' : 'btn-primary' ?> btn-lg w-100 fw-bold py-3 py-sm-4 rounded-4 shadow-sm"
                             name="<?= $edit ? 'update' : 'add' ?>">
                         <?= $edit ? '<i class="fa-solid fa-save me-2"></i>Update' : '<i class="fa-solid fa-plus me-2"></i>Create' ?>
                     </button>
@@ -133,7 +133,7 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll
     <div class="card-header bg-white py-3 border-0">
         <h6 class="mb-0 fw-bold text-muted text-uppercase small">Category List</h6>
     </div>
-    <div class="table-responsive">
+    <div class="table-responsive table-responsive-stack">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light text-muted small text-uppercase">
                 <tr>
@@ -144,24 +144,26 @@ $categories = $pdo->query("SELECT * FROM categories ORDER BY id DESC")->fetchAll
             <tbody>
                 <?php foreach($categories as $c): ?>
                 <tr>
-                    <td class="ps-4">
-                        <div class="d-flex align-items-center">
-                            <div class="rounded-circle bg-light p-2 me-3 text-primary">
+                    <td class="ps-4" data-label="Category Name">
+                        <div class="d-flex align-items-center justify-content-end justify-content-md-start">
+                            <div class="rounded-circle bg-light p-2 me-3 text-primary d-none d-md-block">
                                 <i class="fa-solid fa-folder-open"></i>
                             </div>
                             <span class="fw-semibold text-dark"><?= htmlspecialchars($c['name']) ?></span>
                         </div>
                     </td>
-                    <td class="text-center">
-                        <div class="d-flex justify-content-center gap-2">
+                    <td class="text-center" data-label="Actions">
+                        <div class="d-flex justify-content-center justify-content-md-center gap-3 py-2 py-md-0">
                             <a href="dashboard.php?page=categories&edit=<?= $c['id'] ?>" 
                                class="action-btn btn-edit" 
-                               title="Edit">
+                               title="Edit"
+                               style="width: 48px; height: 48px; font-size: 1.2rem;">
                                <i class="fa-solid fa-pen-nib"></i>
                             </a>
                             <a href="dashboard.php?page=categories&delete=<?= $c['id'] ?>" 
                                class="action-btn btn-delete" 
                                title="Delete"
+                               style="width: 48px; height: 48px; font-size: 1.2rem;"
                                onclick="return confirm('Confirm deletion?')">
                                <i class="fa-solid fa-trash-can"></i>
                             </a>

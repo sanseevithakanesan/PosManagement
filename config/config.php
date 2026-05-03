@@ -8,4 +8,5 @@ define('DB_PASS', '');
 // Site URL (optional)
 define('BASE_URL', 'http://localhost/PosManagement/');
 
+
 ?>

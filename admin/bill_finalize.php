@@ -34,6 +34,7 @@ if ($customerId !== null) {
 }
 
 $cash = (float)str_replace(',', '', (string)($_POST['cash'] ?? '0'));
+$accountId = (int)($_POST['account_id'] ?? 0);
 $postTotal = (float)str_replace(',', '', (string)($_POST['total_amount'] ?? '0'));
 
 $cart = $pdo->query(
@@ -124,9 +125,11 @@ try {
 
     try {
         $pay = $pdo->prepare(
-            'INSERT INTO payments (order_id, payment_method, amount) VALUES (?,\'cash\',?)'
+            'INSERT INTO payments (order_id, payment_method, account_id, amount) VALUES (?,\'cash\',?,?)'
         );
-        $pay->execute([$orderId, $cash]);
+        // Default to account_id 1 (Cash) if none provided
+        $finalAccountId = $accountId > 0 ? $accountId : 1;
+        $pay->execute([$orderId, $finalAccountId, $computed]);
     } catch (Throwable $e) {
         /* payments table optional in some installs */
     }

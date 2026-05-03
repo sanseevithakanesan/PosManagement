@@ -39,11 +39,19 @@ $itemSt->execute([$orderId]);
 $items = $itemSt->fetchAll(PDO::FETCH_ASSOC);
 
 $cashPaid = (float)($order['total_amount']);
-$pmt = $pdo->prepare('SELECT amount FROM payments WHERE order_id = ? ORDER BY id DESC LIMIT 1');
+$accountName = 'Cash';
+$pmt = $pdo->prepare('
+    SELECT p.amount, pa.account_name 
+    FROM payments p 
+    LEFT JOIN payment_accounts pa ON pa.id = p.account_id 
+    WHERE p.order_id = ? 
+    ORDER BY p.id DESC LIMIT 1
+');
 $pmt->execute([$orderId]);
 $rowPay = $pmt->fetch(PDO::FETCH_ASSOC);
-if ($rowPay && isset($rowPay['amount'])) {
-    $cashPaid = (float)$rowPay['amount'];
+if ($rowPay) {
+    if (isset($rowPay['amount'])) $cashPaid = (float)$rowPay['amount'];
+    if (!empty($rowPay['account_name'])) $accountName = $rowPay['account_name'];
 }
 
 $grand = (float)$order['total_amount'];
@@ -156,6 +164,7 @@ $doPrint = isset($_GET['print']) && $_GET['print'] === '1';
         </tbody>
     </table>
     <div class="tot"><span>GRAND TOTAL</span><span><?= number_format($grand, 2) ?></span></div>
+    <div class="sum">Account: <strong><?= htmlspecialchars($accountName) ?></strong></div>
     <div class="sum">Cash given: <strong><?= number_format($cashPaid, 2) ?></strong></div>
     <div class="sum">Balance: <strong><?= number_format($balance, 2) ?></strong></div>
     <div class="thanks">✨ Thank you! ✨</div>

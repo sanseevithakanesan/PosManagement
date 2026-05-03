@@ -17,7 +17,7 @@ try {
     $total_purchases = (float)($stmtPurchases->fetchColumn() ?: 0);
 
     // 3. Total Expenses (Operations)
-    $stmtExpenses = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE DATE(expense_date) >= ? AND DATE(expense_date) <= ?");
+    $stmtExpenses = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE NOT (expense_category = 'Salaries' AND description LIKE 'Salary payout for %') AND DATE(expense_date) >= ? AND DATE(expense_date) <= ?");
     $stmtExpenses->execute([$start_date, $end_date]);
     $total_expenses = (float)($stmtExpenses->fetchColumn() ?: 0);
 
@@ -27,7 +27,7 @@ try {
     $total_payroll = (float)($stmtPayroll->fetchColumn() ?: 0);
 
     // Current Inventory Valuation (Global, not date dependent)
-    $stockValue = $pdo->query("SELECT SUM(stock * price) FROM products WHERE stock > 0")->fetchColumn() ?: 0;
+    $stockValue = $pdo->query("SELECT SUM(stock * price) FROM products WHERE stock > 0 AND deleted_at IS NULL")->fetchColumn() ?: 0;
     
 } catch(Exception $e) {
     $total_income = $total_purchases = $total_expenses = $total_payroll = $stockValue = 0;
@@ -120,45 +120,47 @@ $profit_class = $net_profit >= 0 ? 'text-success' : 'text-danger';
     }
 </style>
 
-<div class="reports-header d-flex justify-content-between align-items-center print-hide">
+<div class="reports-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 print-hide">
     <div>
-        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-chart-line me-2"></i> Reports & Analytics</h3>
-        <p class="mb-0 opacity-75">Business Intelligence and Financial Performance Tracking</p>
+        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-chart-line me-2"></i> Reports</h3>
+        <p class="mb-0 opacity-75">Business Intelligence & Performance</p>
     </div>
     <div class="d-flex gap-2">
-        <button onclick="window.print()" class="btn btn-light fw-bold px-4 shadow-sm">
-            <i class="fa-solid fa-print me-2 text-dark"></i> Print Full Report
+        <button onclick="window.print()" class="btn btn-light btn-lg fw-bold px-4 rounded-4 shadow-sm w-100 w-sm-auto">
+            <i class="fa-solid fa-print me-2 text-dark"></i> Print
         </button>
     </div>
 </div>
 
 
 <!-- DATE FILTER FORM -->
-<div class="card modern-card mb-5 print-hide">
-    <div class="card-body p-4">
-        <form method="GET" class="row g-4 align-items-end">
+<div class="card modern-card mb-5 border-0 print-hide">
+    <div class="card-body p-3 p-md-4">
+        <form method="GET" class="row g-4">
             <input type="hidden" name="page" value="reports">
-            <div class="col-md-3">
-                <label class="form-label text-muted small fw-bold">Reporting From *</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-0"><i class="fa-solid fa-calendar-day text-primary"></i></span>
-                    <input type="date" name="start" class="form-control border-light" value="<?= htmlspecialchars($start_date) ?>" required>
+            <div class="col-12 col-md-4">
+                <label class="form-label text-muted small fw-bold">From *</label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-light border-0"><i class="fa-solid fa-calendar text-primary"></i></span>
+                    <input type="date" name="start" class="form-control border-0 bg-light fw-semibold" value="<?= htmlspecialchars($start_date) ?>" required>
                 </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label text-muted small fw-bold">Reporting To *</label>
-                <div class="input-group">
+            <div class="col-12 col-md-4">
+                <label class="form-label text-muted small fw-bold">To *</label>
+                <div class="input-group input-group-lg">
                     <span class="input-group-text bg-light border-0"><i class="fa-solid fa-calendar-check text-primary"></i></span>
-                    <input type="date" name="end" class="form-control border-light" value="<?= htmlspecialchars($end_date) ?>" required>
+                    <input type="date" name="end" class="form-control border-0 bg-light fw-semibold" value="<?= htmlspecialchars($end_date) ?>" required>
                 </div>
             </div>
-            <div class="col-md-3">
-                <button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm"><i class="fa-solid fa-sync me-2"></i>Generate Analytics</button>
+            <div class="col-12 col-md-4 d-flex align-items-end">
+                <button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm py-3"><i class="fa-solid fa-sync me-2"></i>Generate</button>
             </div>
-            <div class="col-md-3 d-flex gap-2">
-                <a href="dashboard.php?page=reports&start=<?= date('Y-m-d') ?>&end=<?= date('Y-m-d') ?>" class="btn btn-light border-0 flex-grow-1 fw-bold text-muted small">Today</a>
-                <a href="dashboard.php?page=reports&start=<?= date('Y-m-01') ?>&end=<?= date('Y-m-t') ?>" class="btn btn-light border-0 flex-grow-1 fw-bold text-muted small">This Month</a>
-                <a href="dashboard.php?page=reports&start=<?= date('Y-01-01') ?>&end=<?= date('Y-12-31') ?>" class="btn btn-light border-0 flex-grow-1 fw-bold text-muted small">This Year</a>
+            <div class="col-12">
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="dashboard.php?page=reports&start=<?= date('Y-m-d') ?>&end=<?= date('Y-m-d') ?>" class="btn btn-light border-0 fw-bold text-muted small px-4 py-2 rounded-pill">Today</a>
+                    <a href="dashboard.php?page=reports&start=<?= date('Y-m-01') ?>&end=<?= date('Y-m-t') ?>" class="btn btn-light border-0 fw-bold text-muted small px-4 py-2 rounded-pill">This Month</a>
+                    <a href="dashboard.php?page=reports&start=<?= date('Y-01-01') ?>&end=<?= date('Y-12-31') ?>" class="btn btn-light border-0 fw-bold text-muted small px-4 py-2 rounded-pill">This Year</a>
+                </div>
             </div>
         </form>
     </div>
@@ -220,45 +222,45 @@ $profit_class = $net_profit >= 0 ? 'text-success' : 'text-danger';
 
 
 <!-- PROFIT AND LOSS MASTER SUMMARY -->
-<div class="card modern-card mb-5 overflow-hidden">
-    <div class="bg-dark text-white p-4 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-receipt me-2 text-warning"></i> Profit & Loss (P&L) Statement</h5>
+<div class="card modern-card mb-5 overflow-hidden border-0">
+    <div class="bg-dark text-white p-3 p-md-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-receipt me-2 text-warning"></i> P&L Statement</h5>
         <div class="small fw-bold opacity-75">ACCRUAL BASIS SUMMARY</div>
     </div>
-    <div class="p-5 bg-white">
+    <div class="p-3 p-md-5 bg-white">
         <div class="mx-auto" style="max-width: 700px;">
-            <div class="statement-row d-flex justify-content-between align-items-center">
-                <div class="fw-bold text-muted text-uppercase small">Statement Item</div>
-                <div class="fw-bold text-muted text-uppercase small">Amount (LKR)</div>
+            <div class="statement-row d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <div class="fw-bold text-muted text-uppercase small">Item Description</div>
+                <div class="fw-bold text-muted text-uppercase small">Amount</div>
             </div>
             
-            <div class="statement-row d-flex justify-content-between align-items-center">
-                <div class="text-dark fw-bold"><i class="fa-solid fa-circle-plus text-success me-2 opacity-50"></i>Gross Sales Revenue</div>
-                <div class="text-primary fw-bold fs-5">Rs. <?= number_format($total_income, 2) ?></div>
+            <div class="statement-row d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-1">
+                <div class="text-dark fw-bold">Gross Sales Revenue</div>
+                <div class="text-primary fw-bold fs-4">Rs. <?= number_format($total_income, 2) ?></div>
             </div>
             
-            <div class="ps-4">
-                <div class="statement-row d-flex justify-content-between align-items-center bg-light bg-opacity-50 px-3 rounded">
-                    <div class="text-muted"><i class="fa-solid fa-minus me-2 opacity-50"></i>Inventory Purchases (Received)</div>
-                    <div class="text-danger fw-semibold">- Rs. <?= number_format($total_purchases, 2) ?></div>
+            <div class="mt-3">
+                <div class="statement-row d-flex flex-column flex-sm-row justify-content-between align-items-sm-center bg-light bg-opacity-50 p-3 rounded-4 mb-2 gap-1">
+                    <div class="text-muted small fw-bold text-uppercase">Purchases</div>
+                    <div class="text-danger fw-bold">- Rs. <?= number_format($total_purchases, 2) ?></div>
                 </div>
-                <div class="statement-row d-flex justify-content-between align-items-center bg-light bg-opacity-50 px-3 rounded">
-                    <div class="text-muted"><i class="fa-solid fa-minus me-2 opacity-50"></i>General Operations Expenses</div>
-                    <div class="text-danger fw-semibold">- Rs. <?= number_format($total_expenses, 2) ?></div>
+                <div class="statement-row d-flex flex-column flex-sm-row justify-content-between align-items-sm-center bg-light bg-opacity-50 p-3 rounded-4 mb-2 gap-1">
+                    <div class="text-muted small fw-bold text-uppercase">Expenses</div>
+                    <div class="text-danger fw-bold">- Rs. <?= number_format($total_expenses, 2) ?></div>
                 </div>
-                <div class="statement-row d-flex justify-content-between align-items-center bg-light bg-opacity-50 px-3 rounded">
-                    <div class="text-muted"><i class="fa-solid fa-minus me-2 opacity-50"></i>Staff Payroll Distributions</div>
-                    <div class="text-danger fw-semibold">- Rs. <?= number_format($total_payroll, 2) ?></div>
+                <div class="statement-row d-flex flex-column flex-sm-row justify-content-between align-items-sm-center bg-light bg-opacity-50 p-3 rounded-4 mb-2 gap-1">
+                    <div class="text-muted small fw-bold text-uppercase">Payroll</div>
+                    <div class="text-danger fw-bold">- Rs. <?= number_format($total_payroll, 2) ?></div>
                 </div>
             </div>
             
-            <div class="mt-4 p-4 rounded-4 <?= $net_profit >= 0 ? 'bg-success bg-opacity-10 border border-success border-opacity-25' : 'bg-danger bg-opacity-10 border border-danger border-opacity-25' ?>">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="small fw-bold text-uppercase text-muted opacity-75">Final Net Performance</div>
-                        <h3 class="mb-0 fw-bold <?= $profit_class ?>"><?= $net_profit >= 0 ? 'NET PERIOD PROFIT' : 'NET PERIOD LOSS' ?></h3>
+            <div class="mt-5 p-4 rounded-4 <?= $net_profit >= 0 ? 'bg-success bg-opacity-10 border border-success' : 'bg-danger bg-opacity-10 border border-danger' ?>">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                    <div class="text-center text-sm-start">
+                        <div class="small fw-bold text-uppercase text-muted opacity-75">Net Performance</div>
+                        <h4 class="mb-0 fw-bold <?= $profit_class ?>"><?= $net_profit >= 0 ? 'NET PERIOD PROFIT' : 'NET PERIOD LOSS' ?></h4>
                     </div>
-                    <div class="text-end">
+                    <div class="text-center text-sm-end">
                         <h2 class="mb-0 fw-bold <?= $profit_class ?>">Rs. <?= number_format($net_profit, 2) ?></h2>
                     </div>
                 </div>

@@ -210,6 +210,32 @@ try {
         exit;
     }
 
+    if ($action === 'add_account') {
+        $name = trim((string)($_POST['name'] ?? ''));
+        if ($name === '') {
+            echo json_encode(['ok' => false, 'message' => 'Account name cannot be empty']);
+            exit;
+        }
+
+        $check = $pdo->prepare("SELECT id FROM payment_accounts WHERE account_name = ?");
+        $check->execute([$name]);
+        if ($check->fetch()) {
+            echo json_encode(['ok' => false, 'message' => 'Account already exists']);
+            exit;
+        }
+
+        $ins = $pdo->prepare("INSERT INTO payment_accounts (account_name) VALUES (?)");
+        $ins->execute([$name]);
+        $newId = (int)$pdo->lastInsertId();
+
+        echo json_encode([
+            'ok' => true, 
+            'id' => $newId, 
+            'name' => $name
+        ]);
+        exit;
+    }
+
     echo json_encode(['ok' => false, 'message' => 'Unknown action']);
 } catch (Throwable $e) {
     echo json_encode(['ok' => false, 'message' => 'Server error']);

@@ -64,8 +64,8 @@ try {
 
     // --- EXPENSE DATA ---
     if ($report_type === 'all' || $report_type === 'expense') {
-        $sqlSum = "SELECT SUM(amount) FROM expenses WHERE 1=1";
-        $sqlDetails = "SELECT id, expense_date, expense_category, description, amount FROM expenses WHERE 1=1";
+        $sqlSum = "SELECT SUM(amount) FROM expenses WHERE NOT (expense_category = 'Salaries' AND description LIKE 'Salary payout for %')";
+        $sqlDetails = "SELECT id, expense_date, expense_category, description, amount FROM expenses WHERE NOT (expense_category = 'Salaries' AND description LIKE 'Salary payout for %')";
         $params = [];
         if ($hasDates) {
             $sqlSum .= " AND DATE(expense_date) >= ? AND DATE(expense_date) <= ?";
@@ -104,7 +104,7 @@ try {
         }
     }
 
-    $stockValue = ($report_type === 'all') ? (float)($pdo->query("SELECT SUM(stock * price) FROM products WHERE stock > 0")->fetchColumn() ?: 0) : 0.0;
+    $stockValue = ($report_type === 'all') ? (float)($pdo->query("SELECT SUM(stock * price) FROM products WHERE stock > 0 AND deleted_at IS NULL")->fetchColumn() ?: 0) : 0.0;
     
     $netProfit = $total_income - ($total_purchases + $total_expenses + $total_payroll);
     $title = ucfirst($report_type) . " Report";

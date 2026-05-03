@@ -43,6 +43,7 @@ $products = $pdo->query("
     SELECT p.id, p.name, p.stock, p.cost_price, p.price, p.category_id, cat.name as cat_name, {$imgSelect} AS image_path 
     FROM products p
     LEFT JOIN categories cat ON p.category_id = cat.id
+    WHERE p.deleted_at IS NULL
     ORDER BY p.name ASC
 ")->fetchAll();
 
@@ -312,14 +313,23 @@ $purchases = $stmtPurch->fetchAll();
     .btn-action-edit:hover { background: #3b82f6; color: white; }
     .btn-action-del { background: #fef2f2; color: #ef4444; }
     .btn-action-del:hover { background: #ef4444; color: white; }
+    .btn-action-del { background: #fef2f2; color: #ef4444; }
+    .btn-action-del:hover { background: #ef4444; color: white; }
+
+    /* Touch Targets */
+    .btn-touch {
+        width: 48px !important;
+        height: 48px !important;
+        font-size: 1.2rem !important;
+    }
 </style>
 
-<div class="purchases-header d-flex justify-content-between align-items-center">
+<div class="purchases-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
     <div>
-        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-cart-flatbed-suitcase me-2"></i> Purchases & Replenishment</h3>
+        <h3 class="mb-1 fw-bold"><i class="fa-solid fa-cart-flatbed-suitcase me-2"></i> Purchases</h3>
         <p class="mb-0 opacity-75">Procurement and Inventory Inbound</p>
     </div>
-    <a href="dashboard.php?page=purchases" class="btn btn-light fw-bold px-4 <?= $edit ? '' : 'disabled opacity-50' ?>">
+    <a href="dashboard.php?page=purchases" class="btn btn-light btn-lg fw-bold px-4 rounded-4 shadow-sm <?= $edit ? '' : 'disabled opacity-50' ?>">
         <i class="fa-solid fa-plus-circle me-1 text-primary"></i> New Purchase
     </a>
 </div>
@@ -362,7 +372,7 @@ $purchases = $stmtPurch->fetchAll();
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label text-muted small fw-bold">Record Date</label>
-                                <input type="text" class="form-control bg-transparent border-0 fw-bold p-0" value="<?= isset($edit['purchase_date']) ? date('Y-m-d H:i', strtotime($edit['purchase_date'])) : date('Y-m-d H:i') ?>" readonly disabled>
+                                <input type="text" class="form-control form-control-lg bg-light border-0 fw-bold" value="<?= isset($edit['purchase_date']) ? date('Y-m-d H:i', strtotime($edit['purchase_date'])) : date('Y-m-d H:i') ?>" readonly disabled>
                             </div>
                         </div>
                     </div>
@@ -400,7 +410,7 @@ $purchases = $stmtPurch->fetchAll();
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
-                                    <img id="product_preview_img" src="" alt="" class="rounded-pill border" style="width: 48px; height: 48px; object-fit: cover; display: none;">
+                                    <img id="product_preview_img" src="" alt="" class="rounded-pill border" style="width: 56px; height: 56px; object-fit: cover; display: none;">
                                 </div>
                                 <div id="price_hint" class="mt-2"></div>
                             </div>
@@ -480,11 +490,11 @@ $purchases = $stmtPurch->fetchAll();
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label text-muted small fw-bold">Due Balance</label>
-                                <input type="number" step="0.01" name="due_amount" id="purchase_due" class="form-control bg-white text-danger fw-bold border-0 fs-5" value="<?= htmlspecialchars($edit['due_amount'] ?? '0.00') ?>" readonly>
+                                <input type="number" step="0.01" name="due_amount" id="purchase_due" class="form-control form-control-lg bg-white text-danger fw-bold border-0 fs-5" value="<?= htmlspecialchars($edit['due_amount'] ?? '0.00') ?>" readonly>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label text-muted small fw-bold">Stocking Status</label>
-                                <select name="status" class="form-select fw-bold <?= (isset($edit['status']) && $edit['status'] == 'Received') ? 'text-success border-success bg-white' : 'text-warning border-warning bg-white' ?>">
+                                <select name="status" class="form-select form-select-lg fw-bold <?= (isset($edit['status']) && $edit['status'] == 'Received') ? 'text-success border-success bg-white' : 'text-warning border-warning bg-white' ?>">
                                     <option value="Pending" <?= (isset($edit['status']) && $edit['status'] == 'Pending') ? 'selected' : '' ?>>Pending Order</option>
                                     <option value="Received" <?= (isset($edit['status']) && $edit['status'] == 'Received') ? 'selected' : '' ?>>Received (Add Stock)</option>
                                 </select>
@@ -507,24 +517,26 @@ $purchases = $stmtPurch->fetchAll();
 <!-- DATA TABLE -->
 <div class="card modern-card overflow-hidden">
     <div class="card-header bg-white py-3 border-0">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <h6 class="fw-bold text-muted text-uppercase mb-0 small">Purchase Records</h6>
-            <form method="GET" class="d-flex gap-2 align-items-center print-hide">
+            <form method="GET" class="d-flex flex-wrap gap-2 align-items-center print-hide w-100 w-sm-auto">
                 <input type="hidden" name="page" value="purchases">
-                <div class="input-group input-group-sm">
+                <div class="input-group input-group-sm flex-grow-1">
                     <span class="input-group-text bg-light border-0"><i class="fa-solid fa-calendar-alt text-muted"></i></span>
-                    <input type="date" name="start" class="form-control border-light" value="<?= htmlspecialchars($start_date) ?>" style="width: 130px;">
-                    <input type="date" name="end" class="form-control border-light" value="<?= htmlspecialchars($end_date) ?>" style="width: 130px;">
+                    <input type="date" name="start" class="form-control border-light" value="<?= htmlspecialchars($start_date) ?>">
+                    <input type="date" name="end" class="form-control border-light" value="<?= htmlspecialchars($end_date) ?>">
                 </div>
-                <button class="btn btn-dark btn-sm fw-bold px-3">Filter</button>
-                <a href="dashboard.php?page=purchases" class="btn btn-light btn-sm"><i class="fa-solid fa-refresh"></i></a>
-                <a href="dashboard.php?page=reports&pdf=1&type=purchase&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>" class="btn btn-danger btn-sm fw-bold px-3">
-                    <i class="fa-solid fa-file-pdf me-1"></i> PDF
-                </a>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-dark btn-sm fw-bold px-3">Filter</button>
+                    <a href="dashboard.php?page=purchases" class="btn btn-light btn-sm"><i class="fa-solid fa-refresh"></i></a>
+                    <a href="dashboard.php?page=reports&pdf=1&type=purchase&start=<?= urlencode($start_date) ?>&end=<?= urlencode($end_date) ?>" class="btn btn-danger btn-sm fw-bold px-3">
+                        <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                    </a>
+                </div>
             </form>
         </div>
     </div>
-    <div class="table-responsive">
+    <div class="table-responsive table-responsive-stack">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light text-muted small text-uppercase">
                 <tr>
@@ -541,40 +553,52 @@ $purchases = $stmtPurch->fetchAll();
             <tbody>
             <?php foreach($purchases as $p): ?>
             <tr>
-                <td class="ps-4">
-                    <div class="fw-bold text-dark"><?= htmlspecialchars($p['reference_no']) ?></div>
-                    <div class="small text-muted"><i class="fa-solid fa-receipt me-1 opacity-50"></i> <?= htmlspecialchars($p['invoice_no'] ?: '-') ?></div>
+                <td class="ps-4" data-label="Ref / Invoice">
+                    <div class="d-flex flex-column align-items-end align-items-md-start">
+                        <div class="fw-bold text-dark fs-6"><?= htmlspecialchars($p['reference_no']) ?></div>
+                        <div class="small text-muted mt-1"><i class="fa-solid fa-receipt me-1 opacity-50"></i> <?= htmlspecialchars($p['invoice_no'] ?: '-') ?></div>
+                    </div>
                 </td>
-                <td>
-                    <div class="fw-bold text-dark"><?= htmlspecialchars($p['product_name'] ?: 'Unknown') ?></div>
-                    <div class="small text-muted"><i class="fa-solid fa-layer-group me-1 opacity-50"></i> <?= htmlspecialchars($p['category_name'] ?: 'General') ?></div>
-                    <div class="small text-primary fw-semibold mt-1">SRP: Rs. <?= number_format($p['selling_price'], 2) ?></div>
+                <td data-label="Product">
+                    <div class="d-flex flex-column align-items-end align-items-md-start text-end text-md-start">
+                        <div class="fw-bold text-dark"><?= htmlspecialchars($p['product_name'] ?: 'Unknown') ?></div>
+                        <div class="small text-muted"><i class="fa-solid fa-layer-group me-1 opacity-50"></i> <?= htmlspecialchars($p['category_name'] ?: 'General') ?></div>
+                        <div class="badge bg-primary-subtle text-primary fw-bold mt-2">SRP: Rs. <?= number_format($p['selling_price'], 2) ?></div>
+                    </div>
                 </td>
-                <td><span class="fw-semibold text-secondary"><?= htmlspecialchars($p['supplier']) ?></span></td>
-                <td>
-                    <div><small class="text-muted">Cost:</small> Rs. <?= number_format($p['unit_cost'], 2) ?></div>
-                    <div><small class="text-muted">Qty:</small> <span class="badge bg-light text-dark fw-bold"><?= htmlspecialchars($p['quantity']) ?> units</span></div>
+                <td data-label="Supplier">
+                    <div class="fw-bold text-dark text-end text-md-start">
+                        <i class="fa-solid fa-truck-field me-1 text-muted"></i> <?= htmlspecialchars($p['supplier']) ?>
+                    </div>
                 </td>
-                <td>
-                    <?php if($p['status'] == 'Received'): ?>
-                        <div class="small">In Stock: <b class="<?= $p['remaining_qty'] > 0 ? 'text-success' : 'text-danger' ?>"><?= $p['remaining_qty'] ?></b></div>
-                    <?php endif; ?>
-                    <div class="small text-muted mb-1">Batch: <span class="badge bg-light text-secondary fw-normal"><?= htmlspecialchars($p['batch_no'] ?: 'N/A') ?></span></div>
-                    <?php if($p['expiry_date']): ?>
-                        <div class="small text-danger fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i>Exp: <?= date('M d, Y', strtotime($p['expiry_date'])) ?></div>
-                    <?php endif; ?>
+                <td data-label="Cost & Qty">
+                    <div class="d-flex flex-column align-items-end align-items-md-start">
+                        <div class="fw-bold">Rs. <?= number_format($p['unit_cost'], 2) ?> <small class="text-muted fw-normal">/ unit</small></div>
+                        <div class="mt-1"><span class="badge bg-light text-dark border fw-bold"><?= htmlspecialchars($p['quantity']) ?> Units Purchased</span></div>
+                    </div>
                 </td>
-                <td>
-                    <div class="text-muted small">Sub: Rs. <?= number_format($p['total_cost'], 2) ?></div>
-                    <div class="fw-bold text-dark fs-6">Final: Rs. <?= number_format($p['final_amount'] ?? $p['total_cost'], 2) ?></div>
+                <td data-label="Inventory">
+                    <div class="d-flex flex-column align-items-end align-items-md-start">
+                        <?php if($p['status'] == 'Received'): ?>
+                            <div class="fw-bold text-success"><i class="fa-solid fa-warehouse me-1"></i> Stock: <?= $p['remaining_qty'] ?></div>
+                        <?php endif; ?>
+                        <div class="small text-muted mt-1">Batch: <span class="fw-semibold text-dark"><?= htmlspecialchars($p['batch_no'] ?: 'N/A') ?></span></div>
+                        <?php if($p['expiry_date']): ?>
+                            <div class="badge bg-danger-subtle text-danger fw-bold mt-1"><i class="fa-solid fa-calendar-xmark me-1"></i>Exp: <?= date('M d, Y', strtotime($p['expiry_date'])) ?></div>
+                        <?php endif; ?>
+                    </div>
                 </td>
-                <td>
-                    <div class="mb-2">
+                <td data-label="Final Amount">
+                    <div class="d-flex flex-column align-items-end align-items-md-start">
+                        <div class="text-muted small">Sub: Rs. <?= number_format($p['total_cost'], 2) ?></div>
+                        <div class="fw-bold text-primary fs-5">Rs. <?= number_format($p['final_amount'] ?? $p['total_cost'], 2) ?></div>
+                    </div>
+                </td>
+                <td data-label="Status & Pay">
+                    <div class="d-flex flex-column align-items-end align-items-md-start gap-2">
                         <span class="status-pill <?= $p['status'] == 'Received' ? 'pill-received' : 'pill-pending' ?>">
                             <i class="fa-solid <?= $p['status'] == 'Received' ? 'fa-circle-check' : 'fa-clock' ?> me-1"></i><?= $p['status'] ?>
                         </span>
-                    </div>
-                    <div>
                         <?php 
                             $payClass = $p['payment_status'] == 'Paid' ? 'pill-paid' : ($p['payment_status'] == 'Partial' ? 'pill-partial' : 'pill-unpaid');
                             $payIcon = $p['payment_status'] == 'Paid' ? 'fa-check-double' : ($p['payment_status'] == 'Partial' ? 'fa-adjust' : 'fa-times-circle');
@@ -582,17 +606,17 @@ $purchases = $stmtPurch->fetchAll();
                         <span class="status-pill <?= $payClass ?>">
                             <i class="fa-solid <?= $payIcon ?> me-1"></i><?= $p['payment_status'] ?>
                         </span>
+                        <?php if($p['due_amount'] > 0): ?>
+                            <div class="small text-danger fw-bold">Due: Rs. <?= number_format($p['due_amount'], 2) ?></div>
+                        <?php endif; ?>
                     </div>
-                    <?php if($p['due_amount'] > 0): ?>
-                        <div class="small mt-1 text-danger fw-bold">Due: Rs. <?= number_format($p['due_amount'], 2) ?></div>
-                    <?php endif; ?>
                 </td>
                 <td class="text-end pe-4">
-                    <div class="action-btn-group d-flex justify-content-end gap-2">
-                        <a href="dashboard.php?page=purchases&edit=<?= $p['id'] ?>" class="btn btn-action-edit" title="Edit Record">
+                    <div class="action-btn-group d-flex justify-content-center justify-content-md-end gap-3 py-2 py-md-0">
+                        <a href="dashboard.php?page=purchases&edit=<?= $p['id'] ?>" class="btn btn-action-edit btn-touch" title="Edit Record">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </a>
-                        <a href="dashboard.php?page=purchases&delete=<?= $p['id'] ?>" class="btn btn-action-del" 
+                        <a href="dashboard.php?page=purchases&delete=<?= $p['id'] ?>" class="btn btn-action-del btn-touch" 
                            onclick="return confirm('Delete this purchase? This will revert stock if received. Confirm?')" title="Delete Record">
                             <i class="fa-solid fa-trash-can"></i>
                         </a>

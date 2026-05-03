@@ -13,6 +13,11 @@ $stock_alert = '';
 $alert_type  = 'warn';
 
 /* =====================
+   FETCH ACCOUNTS
+===================== */
+$accounts = $pdo->query("SELECT * FROM payment_accounts ORDER BY account_name ASC")->fetchAll();
+
+/* =====================
    ADD TO CART
 ===================== */
 if(isset($_POST['add_cart'])){
@@ -127,7 +132,7 @@ if($barcode != ''){
    DATA
 ===================== */
 $imgSel = '(SELECT pi.file_path FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1)';
-$products  = $pdo->query("SELECT p.*, {$imgSel} AS image_path FROM products p ORDER BY p.name")->fetchAll();
+$products  = $pdo->query("SELECT p.*, {$imgSel} AS image_path FROM products p WHERE p.deleted_at IS NULL ORDER BY p.name")->fetchAll();
 
 $cart = $pdo->query("
     SELECT c.id, c.qty, c.discount_type, c.discount_value,
@@ -162,7 +167,7 @@ $in_stock     = count($products) - $out_of_stock - $low_stock;
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
 <title>POS System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    RESET & BASE
@@ -174,28 +179,30 @@ $in_stock     = count($products) - $out_of_stock - $low_stock;
 }
 
 :root {
-    --ink:     #0f0e17;
-    --paper:   #f7f6f2;
+    --ink:     #0f172a;
+    --paper:   #f8fafc;
     --card:    #ffffff;
-    --accent:  #ff6b35;
-    --green:   #22c55e;
+    --accent:  #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.5);
+    --green:   #10b981;
     --red:     #ef4444;
     --yellow:  #f59e0b;
     --blue:    #3b82f6;
-    --muted:   #9ca3af;
-    --border:  #e5e2db;
-    --receipt: #fffdf7;
-    --radius:  12px;
-    --shadow:  0 2px 12px rgba(0,0,0,.08);
+    --muted:   #64748b;
+    --border:  #e2e8f0;
+    --receipt: #ffffff;
+    --radius:  16px;
+    --shadow:  0 4px 20px rgba(15, 23, 42, 0.05);
     --safe-b:  env(safe-area-inset-bottom, 0px);
 }
 
 body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--paper);
     color: var(--ink);
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
 }
 
 .pos-wrap {
@@ -215,14 +222,20 @@ body {
 }
 
 .pos-header h3 {
-    font-family: 'Oxanium', monospace;
+    font-family: 'Outfit', sans-serif;
     font-weight: 800;
-    font-size: clamp(1.2rem, 4vw, 1.5rem);
-    letter-spacing: .07em;
+    font-size: clamp(1.25rem, 4.5vw, 1.75rem);
+    letter-spacing: -0.5px;
     color: var(--ink);
-    border-left: 5px solid var(--accent);
-    padding-left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     line-height: 1.2;
+}
+
+.pos-header h3 i {
+    color: var(--accent);
+    filter: drop-shadow(0 0 10px var(--accent-glow));
 }
 
 .inv-summary {
@@ -370,17 +383,16 @@ body {
 .prod-card {
     position: relative;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: clamp(8px, 2vw, 15px);
+    flex-direction: column;
+    gap: 12px;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: clamp(8px, 2.0vw, 11px) clamp(9px, 2.3vw, 13px);
+    padding: 14px;
     box-shadow: var(--shadow);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
-    max-width: 100%;
+    height: 100%;
 }
 
 .prod-card { cursor: pointer; }
@@ -419,13 +431,14 @@ body {
 }
 
 .prod-thumb-wrap {
-    width: clamp(52px, 12vw, 60px);
-    height: clamp(52px, 12vw, 60px);
-    border-radius: 10px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    border-radius: 12px;
     overflow: hidden;
     flex-shrink: 0;
-    background: #f1f5f9;
-    border: 1px solid var(--border);
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 .prod-thumb-wrap img {
@@ -506,10 +519,16 @@ body {
 .cart-item-card {
     position: relative;
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     border-radius: var(--radius);
-    padding: clamp(10px, 2.5vw, 14px) clamp(12px, 3vw, 16px);
-    padding-right: clamp(36px, 8vw, 44px);
+    padding: 16px;
+    padding-right: 48px;
+    transition: all 0.2s ease;
+}
+
+.cart-item-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
 .cart-remove-x {
@@ -695,15 +714,22 @@ body {
 
 .btn-preview {
     width: 100%;
-    padding: clamp(12px, 3vw, 16px);
-    background: var(--accent);
+    padding: 18px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: #fff;
     border: none;
     border-radius: var(--radius);
-    font-weight: 700;
-    font-size: clamp(0.9rem, 3vw, 1rem);
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
     cursor: pointer;
     margin-top: 10px;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    transition: all 0.2s;
+}
+
+.btn-preview:active {
+    transform: scale(0.98);
 }
 
 /* Customer phone / name autocomplete (checkout) */
@@ -909,6 +935,9 @@ body {
     
     .mobile-tabs { 
         display: block; 
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }
     
     .pos-columns { 
@@ -926,6 +955,9 @@ body {
     
     .sticky-bottom-bar { 
         display: block; 
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
     }
     
     /* Make checkout section always visible when cart tab is active */
@@ -952,6 +984,107 @@ body {
 #printArea { 
     display: none; 
 }
+    /* Customer Autocomplete Dropdown */
+    .customer-ac-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        z-index: 1000;
+        max-height: 250px;
+        overflow-y: auto;
+        display: none;
+        border: 1px solid var(--border);
+        margin-top: 5px;
+    }
+    .customer-ac-dropdown.show { display: block; }
+    .customer-ac-item {
+        width: 100%;
+        padding: 12px 16px;
+        text-align: left;
+        border: none;
+        background: transparent;
+        font-size: 0.95rem;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .customer-ac-item:hover { background: #f8fafc; color: var(--accent); }
+    .customer-ac-item:last-child { border-bottom: none; }
+    
+    .customer-ac-hint { font-size: 0.75rem; color: var(--muted); margin-top: 8px; line-height: 1.4; }
+
+    /* Checkout Modal Enhancements */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.7);
+        backdrop-filter: blur(8px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 16px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+        background: white;
+        border-radius: 24px;
+        width: 100%;
+        max-width: 480px;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+    .modal-close-x {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .bill-inner { padding: 32px; font-family: 'Inter', sans-serif; }
+    .bill-header { text-align: center; margin-bottom: 24px; }
+    .shop-name { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.5rem; margin-bottom: 4px; }
+    .shop-tag { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
+    .bill-no { font-family: 'Oxanium', monospace; font-weight: 700; font-size: 0.9rem; color: var(--accent); }
+    
+    .bill-meta { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 20px; color: var(--muted); }
+    .bill-items { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9rem; }
+    .bill-items th { text-align: left; padding: 10px 0; border-bottom: 2px solid var(--paper); color: var(--muted); font-weight: 700; text-uppercase; font-size: 0.75rem; }
+    .bill-items td { padding: 12px 0; border-bottom: 1px solid var(--paper); }
+    
+    .bill-total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 2px dashed var(--border); }
+    .bill-total-row span { font-weight: 800; font-size: 1.1rem; }
+    .bill-total-row .amount { font-size: 1.5rem; color: var(--ink); }
+    
+    .cash-summary { margin-top: 16px; background: var(--paper); padding: 16px; border-radius: 16px; font-size: 0.95rem; }
+    .cash-summary div { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .cash-summary div:last-child { margin-bottom: 0; font-weight: 700; color: var(--green); }
+    
+    .bill-thanks { text-align: center; margin-top: 32px; font-style: italic; color: var(--muted); }
+    .bill-actions { padding: 0 32px 32px; }
+    .btn-confirm { width: 100%; padding: 16px; border-radius: 16px; background: var(--accent); color: white; border: none; font-weight: 700; font-size: 1.1rem; cursor: pointer; box-shadow: 0 10px 20px var(--accent-glow); transition: transform 0.2s; }
+    .btn-confirm:active { transform: scale(0.98); }
+
+    @media (max-width: 576px) {
+        .modal-box { border-radius: 0; max-height: 100vh; height: 100vh; }
+        .bill-inner { padding: 24px; padding-top: 60px; }
+    }
 </style>
 
 <!-- ============================================================
@@ -960,13 +1093,13 @@ body {
 <div class="pos-wrap">
 
     <div class="pos-header">
-        <h3>🧾 POS System</h3>
+        <h3><i class="fa-solid fa-cash-register"></i> POS System</h3>
     </div>
 
     <div class="inv-summary">
-        <div class="inv-chip"><span class="dot dot-green"></span>In Stock: <?= $in_stock ?></div>
-        <div class="inv-chip"><span class="dot dot-yellow"></span>Low (≤5): <?= $low_stock ?></div>
-        <div class="inv-chip"><span class="dot dot-red"></span>Out: <?= $out_of_stock ?></div>
+        <div class="inv-chip shadow-sm border-0"><span class="dot" style="background: var(--green);"></span> In Stock: <?= $in_stock ?></div>
+        <div class="inv-chip shadow-sm border-0"><span class="dot" style="background: var(--yellow);"></span> Low Stock: <?= $low_stock ?></div>
+        <div class="inv-chip shadow-sm border-0"><span class="dot" style="background: var(--red);"></span> Out of Stock: <?= $out_of_stock ?></div>
     </div>
 
     <?php if($stock_alert): ?>
@@ -1001,25 +1134,26 @@ body {
 
         <!-- PRODUCTS TAB -->
         <div class="tab-panel active" id="tab-products">
-            <div class="col-section-title">🛒 Products</div>
+            <div class="col-section-title text-muted text-uppercase small fw-bold mb-3"><i class="fa-solid fa-boxes-stacked me-2"></i> Catalog</div>
             <div class="products-list">
             <?php foreach($products as $p):
                 $s = (int)$p['stock'];
                 $badge_class = $s == 0 ? 'empty' : ($s <= 5 ? 'low' : 'ok');
-                $badge_text  = $s == 0 ? '🚫 Out of Stock' : ($s <= 5 ? "⚠️ Only {$s} left" : "✅ {$s} in stock");
+                $badge_icon  = $s == 0 ? 'fa-circle-xmark' : ($s <= 5 ? "fa-triangle-exclamation" : "fa-circle-check");
+                $badge_text  = $s == 0 ? 'Out of Stock' : ($s <= 5 ? "Only {$s} left" : "{$s} Available");
                 $prodImgUrl = product_image_url($p['image_path'] ?? null);
             ?>
             <?php if($s == 0): ?>
-                <div class="prod-card out-of-stock">
-                    <div class="prod-card-inner">
-                        <div class="prod-thumb-wrap">
-                            <img src="<?= htmlspecialchars($prodImgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="">
-                        </div>
-                        <div class="prod-info">
-                            <div class="prod-name"><?= htmlspecialchars($p['name']) ?></div>
-                            <div class="prod-price">💰 <?= number_format($p['price'], 2) ?></div>
-                            <span class="stock-badge <?= $badge_class ?>"><?= $badge_text ?></span>
-                        </div>
+                <div class="prod-card out-of-stock opacity-75">
+                    <div class="prod-thumb-wrap">
+                        <img src="<?= htmlspecialchars($prodImgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                    </div>
+                    <div class="prod-info text-center">
+                        <div class="prod-name mb-1"><?= htmlspecialchars($p['name']) ?></div>
+                        <div class="prod-price fw-bold mb-2">Rs. <?= number_format($p['price'], 2) ?></div>
+                        <span class="stock-badge <?= $badge_class ?> w-100 justify-content-center">
+                            <i class="fa-solid <?= $badge_icon ?> me-1"></i> <?= $badge_text ?>
+                        </span>
                     </div>
                 </div>
             <?php else: ?>
@@ -1032,15 +1166,15 @@ body {
                             class="prod-click-btn"
                             aria-label="Add <?= htmlspecialchars($p['name']) ?> to cart">
                         </button>
-                        <div class="prod-card-inner">
-                            <div class="prod-thumb-wrap">
-                                <img src="<?= htmlspecialchars($prodImgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="">
-                            </div>
-                                <div class="prod-info">
-                                    <div class="prod-name"><?= htmlspecialchars($p['name']) ?></div>
-                                    <div class="prod-price">💰 <?= number_format($p['price'], 2) ?></div>
-                                    <span class="stock-badge <?= $badge_class ?>"><?= $badge_text ?></span>
-                                </div>
+                        <div class="prod-thumb-wrap">
+                            <img src="<?= htmlspecialchars($prodImgUrl, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                        </div>
+                        <div class="prod-info text-center">
+                            <div class="prod-name mb-1"><?= htmlspecialchars($p['name']) ?></div>
+                            <div class="prod-price fw-bold mb-2">Rs. <?= number_format($p['price'], 2) ?></div>
+                            <span class="stock-badge <?= $badge_class ?> w-100 justify-content-center">
+                                <i class="fa-solid <?= $badge_icon ?> me-1"></i> <?= $badge_text ?>
+                            </span>
                         </div>
                     </div>
                 </form>
@@ -1130,37 +1264,67 @@ body {
             <a href="dashboard.php?page=pos&clear=1" class="btn-clear">🗑 Clear Cart</a>
             <?php endif; ?>
 
-            <!-- CHECKOUT SECTION - THIS IS THE IMPORTANT PART - BUTTON WILL SHOW HERE -->
-            <div class="checkout-section">
-                <div class="col-section-title" style="margin-bottom:12px;">💳 Checkout</div>
-                <div class="checkout-form">
-                    <div class="customer-ac-wrap" id="customer_lookup_wrap">
-                        <label for="customer_lookup" class="form-label visually-hidden">Customer</label>
-                        <input type="text"
-                               id="customer_lookup"
-                               class="form-control"
-                               placeholder="Phone or 0772844417 - sanju"
-                               autocomplete="off">
-                        <div id="customer_ac_dropdown" class="customer-ac-dropdown" role="listbox" aria-label="Matching customers"></div>
-                        <p class="customer-ac-hint mb-0">
-                            Search by phone or name. Pick a row or type <strong>phone − first name</strong> for a new customer — saved automatically at billing.
-                        </p>
-                        <input type="text"
-                               id="new_customer_name"
-                               class="form-control mt-2"
-                               placeholder="Optional: name if you typed digits only (new customer)"
-                               autocomplete="name">
+            <!-- CHECKOUT SECTION -->
+            <div class="checkout-section mt-4">
+                <div class="col-section-title d-flex align-items-center gap-2 mb-3">
+                    <i class="fa-solid fa-credit-card text-accent"></i> Finalize Bill
+                </div>
+                <div class="checkout-form bg-white p-4 rounded-4 border border-light shadow-sm">
+                    <div class="customer-ac-wrap position-relative" id="customer_lookup_wrap">
+                        <label class="form-label text-muted small fw-bold mb-1">Select Customer</label>
+                        <div class="input-group input-group-lg mb-2">
+                            <span class="input-group-text bg-light border-0"><i class="fa-solid fa-user-magnifying text-muted"></i></span>
+                            <input type="text" id="customer_lookup" class="form-control border-0 bg-light fw-semibold" placeholder="Phone or Name..." autocomplete="off">
+                        </div>
+                        <div id="customer_ac_dropdown" class="customer-ac-dropdown" role="listbox"></div>
+                        
+                        <div id="new_cust_fields" style="display:none;">
+                            <input type="text" id="new_customer_name" class="form-control form-control-lg border-0 bg-light fw-semibold mt-2" placeholder="Customer Name (for new entries)" autocomplete="name">
+                        </div>
                     </div>
 
-                    <input type="number" id="cash_input"
-                           placeholder="💵 Cash Given" required min="0" step="0.01">
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label text-muted small fw-bold mb-0">Account Type *</label>
+                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none fw-bold" data-bs-toggle="modal" data-bs-target="#accountModal">
+                                <i class="fa-solid fa-plus-circle me-1"></i>New Account
+                            </button>
+                        </div>
+                        <div class="input-group input-group-lg mb-3">
+                            <span class="input-group-text bg-light border-0"><i class="fa-solid fa-building-columns text-muted"></i></span>
+                            <select id="account_type" class="form-select border-0 bg-light fw-semibold">
+                                <?php foreach($accounts as $acc): ?>
+                                    <option value="<?= $acc['id'] ?>"><?= htmlspecialchars($acc['account_name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
 
-                    <input type="text" id="balance_input"
-                           placeholder="🔄 Balance" readonly>
+                        <label class="form-label text-muted small fw-bold mb-1">Cash Payment (Rs)</label>
+                        <div class="input-group input-group-lg mb-3">
+                            <span class="input-group-text bg-success-subtle border-0 text-success"><i class="fa-solid fa-money-bill-wave"></i></span>
+                            <input type="number" id="cash_input" class="form-control border-0 bg-light fw-bold text-success" placeholder="0.00" required min="0" step="0.01">
+                        </div>
 
-                    <button type="button" class="btn-preview" onclick="void openPreview()">
-                        👁 PREVIEW & GENERATE BILL
-                    </button>
+                        <div class="row g-2 mb-4">
+                            <div class="col-6">
+                                <div class="p-3 rounded-4 bg-light text-center">
+                                    <div class="text-muted small fw-bold text-uppercase mb-1">Grand Total</div>
+                                    <div class="fw-bold fs-5" id="checkout_total_display">₹ 0.00</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 rounded-4 bg-primary bg-opacity-10 text-center border border-primary border-opacity-10">
+                                    <div class="text-primary small fw-bold text-uppercase mb-1">Change Due</div>
+                                    <input type="text" id="balance_input" class="fw-bold fs-5 text-primary text-center border-0 bg-transparent w-100 p-0" placeholder="0.00" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-primary btn-lg w-100 py-3 rounded-4 fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2" onclick="void openPreview()">
+                            <i class="fa-solid fa-receipt"></i>
+                            GENERATE BILL & RECEIPT
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1251,8 +1415,29 @@ body {
     <input type="hidden" name="confirm_bill" value="1">
     <input type="hidden" name="customer_id" id="hCustomer">
     <input type="hidden" name="cash" id="hCash">
+    <input type="hidden" name="account_id" id="hAccountId">
     <input type="hidden" name="total_amount" id="hTotalAmount" value="<?= htmlspecialchars((string)$total, ENT_QUOTES, 'UTF-8') ?>">
 </form>
+
+<!-- Account Modal -->
+<div class="modal fade" id="accountModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold">New Payment Account</h6>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label text-muted small fw-bold">Account Name</label>
+                <input type="text" id="new_account_name" class="form-control form-control-lg border-0 bg-light fw-semibold" placeholder="e.g. HNB Bank, Petty Cash">
+                <small class="text-muted d-block mt-2">Create separate accounts to track where money is received.</small>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-primary w-100 py-2 fw-bold rounded-3" id="save_account_btn">Create Account</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="pos-toast" id="posToast" style="display:none;"></div>
 
@@ -1267,7 +1452,10 @@ function getDiscountModal() {
     if (!discountModalInstance) discountModalInstance = new bootstrap.Modal(el);
     return discountModalInstance;
 }
-window.addEventListener('load', () => { getDiscountModal(); });
+window.addEventListener('load', () => { 
+    getDiscountModal(); 
+    updateGrandTotalUI(getGrandTotal());
+});
 
 <?php if($stock_alert): ?>
 showToast(<?= json_encode(strip_tags($stock_alert)) ?>, '<?= $alert_type ?>');
@@ -1307,8 +1495,10 @@ function updateGrandTotalUI(total) {
     const fmt = t.toFixed(2);
     const main = document.getElementById('grand_total_main');
     const sticky = document.getElementById('grand_total_sticky');
+    const checkout = document.getElementById('checkout_total_display');
     if (main) main.textContent = '₹ ' + fmt;
     if (sticky) sticky.textContent = '₹ ' + fmt;
+    if (checkout) checkout.textContent = '₹ ' + fmt;
     const h = document.getElementById('hTotalAmount');
     if (h) h.value = fmt;
 }
@@ -1445,16 +1635,21 @@ function clearCustomerPickState() {
 
 async function runCustomerSearch() {
     const input = document.getElementById('customer_lookup');
+    const newField = document.getElementById('new_cust_fields');
     if (!input) return;
     const q = input.value.trim();
     if (q.length < 1) {
         hideCustomerAc();
+        if(newField) newField.style.display = 'none';
         return;
     }
     try {
         const data = await posAjax({ action: 'customer_search', q });
         if (!data.ok) return;
         renderCustomerAc(data.items || []);
+        if(newField) {
+            newField.style.display = (data.items && data.items.length) ? 'none' : 'block';
+        }
     } catch (e) {
         hideCustomerAc();
     }
@@ -1694,6 +1889,7 @@ async function openPreview() {
     document.getElementById('bItems').innerHTML = rows;
 
     document.getElementById('hCash').value = cash;
+    document.getElementById('hAccountId').value = document.getElementById('account_type').value;
     document.getElementById('billModal').classList.add('active');
 }
 
@@ -1714,4 +1910,28 @@ function confirmBill() {
     closeModal();
     document.getElementById('realBillForm').submit();
 }
+document.getElementById('save_account_btn')?.addEventListener('click', async () => {
+    const name = document.getElementById('new_account_name').value.trim();
+    if (!name) {
+        showToast('Please enter an account name', 'error');
+        return;
+    }
+    try {
+        const data = await posAjax({ action: 'add_account', name });
+        if (!data.ok) {
+            showToast(data.message || 'Error creating account', 'error');
+            return;
+        }
+        const select = document.getElementById('account_type');
+        const opt = new Option(data.name, data.id);
+        select.add(opt);
+        select.value = data.id;
+        
+        document.getElementById('new_account_name').value = '';
+        bootstrap.Modal.getInstance(document.getElementById('accountModal'))?.hide();
+        showToast('Account created successfully', 'success');
+    } catch (e) {
+        showToast('Network error', 'error');
+    }
+});
 </script>

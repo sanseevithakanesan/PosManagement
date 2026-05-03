@@ -20,7 +20,7 @@ $editId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $existing = null;
 $existingImages = [];
 if ($editId > 0) {
-    $ps = $pdo->prepare('SELECT * FROM products WHERE id = ?');
+    $ps = $pdo->prepare('SELECT * FROM products WHERE id = ? AND deleted_at IS NULL');
     $ps->execute([$editId]);
     $existing = $ps->fetch(PDO::FETCH_ASSOC);
     if (!$existing) {
@@ -463,15 +463,37 @@ $ex = $existing ?? [];
         }
         .image-preview-tile .rm:hover { background: #dc2626; }
         .existing-image-tile {
-            width: 88px; height: 88px; border-radius: 12px; overflow: hidden; position: relative;
-            border: 1px solid #e2e8f0; flex-shrink: 0;
+            width: 110px; height: 110px; border-radius: 12px; overflow: hidden; position: relative;
+            border: 1px solid #e2e8f0; flex-shrink: 0; transition: all 0.2s;
         }
         .existing-image-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .existing-image-tile .form-check {
+        .existing-image-tile .remove-overlay {
             position: absolute; bottom: 0; left: 0; right: 0; margin: 0;
-            background: rgba(15,23,42,0.8); padding: 4px 6px;
+            background: rgba(220, 38, 38, 0.85); padding: 8px 6px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background 0.2s;
         }
+        .existing-image-tile .remove-overlay:hover { background: rgba(220, 38, 38, 1); }
+        .existing-image-tile .form-check-input { width: 1.2rem; height: 1.2rem; margin-top: 0; cursor: pointer; }
+        .existing-image-tile .form-check-label { 
+            font-size: 0.85rem; color: #fff; font-weight: 700; cursor: pointer; 
+            margin-left: 8px; user-select: none;
+        }
+        .existing-image-tile.marked-delete { filter: grayscale(1) opacity(0.5); border: 2px solid #dc2626; }
         .existing-image-tile .form-check-label { font-size: 0.7rem; color: #fff; }
+
+        /* Touch Optimized Inputs */
+        .form-control-lg-touch {
+            height: 54px !important;
+            font-size: 1.1rem !important;
+            border-radius: 12px !important;
+        }
+        .btn-lg-touch {
+            padding: 15px 30px !important;
+            font-size: 1.1rem !important;
+            font-weight: 700 !important;
+            border-radius: 12px !important;
+        }
     </style>
 </head>
 <body class="app-body">
@@ -532,20 +554,20 @@ $ex = $existing ?? [];
                 <p class="section-title">Identification & description</p>
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
-                        <label class="form-label">Product name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control" required maxlength="150"
+                        <label class="form-label text-muted small fw-bold">PRODUCT NAME *</label>
+                        <input type="text" name="name" class="form-control form-control-lg-touch" required maxlength="150"
                                placeholder="e.g. Basmati Rice 5kg"
                                value="<?= htmlspecialchars($val('name', $ex['name'] ?? '')) ?>">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Title / subtitle</label>
-                        <input type="text" name="title" class="form-control" maxlength="255"
+                        <label class="form-label text-muted small fw-bold">TITLE / SUBTITLE</label>
+                        <input type="text" name="title" class="form-control form-control-lg-touch" maxlength="255"
                                placeholder="Display title for labels and receipts"
                                value="<?= htmlspecialchars($val('title', $ex['title'] ?? '')) ?>">
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Category</label>
-                        <select name="category_id" class="form-select">
+                        <label class="form-label text-muted small fw-bold">CATEGORY</label>
+                        <select name="category_id" class="form-select form-select-lg" style="height: 54px; border-radius: 12px;">
                             <option value="" <?= $catSelected === '' ? 'selected' : '' ?>>— Uncategorized —</option>
                             <?php foreach ($categories as $c): ?>
                                 <option value="<?= (int)$c['id'] ?>"
@@ -556,47 +578,46 @@ $ex = $existing ?? [];
                         </select>
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="4" placeholder="Specs, shelf life, notes for staff"><?=
+                        <label class="form-label text-muted small fw-bold">DESCRIPTION</label>
+                        <textarea name="description" class="form-control" rows="4" style="border-radius: 12px;" placeholder="Specs, shelf life, notes for staff"><?=
                             htmlspecialchars($val('description', $ex['description'] ?? ''))
                         ?></textarea>
                     </div>
                 </div>
 
-                <p class="section-title">Pricing & SKU</p>
-                <div class="row g-3 mb-4">
+                <p class="section-title">Price             <div class="row g-3 mb-4">
                     <div class="col-md-4">
-                        <label class="form-label">Selling price (Rs.) <span class="text-danger">*</span></label>
-                        <input type="number" name="price" class="form-control" step="0.01" min="0" required
+                        <label class="form-label text-muted small fw-bold">SELLING PRICE (RS.) *</label>
+                        <input type="number" name="price" class="form-control form-control-lg-touch fw-bold text-primary" step="0.01" min="0" required
                                value="<?= htmlspecialchars($val('price', isset($ex['price']) ? (string)$ex['price'] : '')) ?>">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Cost price (Rs.)</label>
-                        <input type="number" name="cost_price" class="form-control" step="0.01" min="0"
+                        <label class="form-label text-muted small fw-bold">COST PRICE (RS.)</label>
+                        <input type="number" name="cost_price" class="form-control form-control-lg-touch" step="0.01" min="0"
                                placeholder="Optional"
                                value="<?= htmlspecialchars($val(
                                    'cost_price',
                                    isset($ex['cost_price']) && $ex['cost_price'] !== null && $ex['cost_price'] !== '' ? (string)$ex['cost_price'] : ''
-                               )) ?>">
+                                )) ?>">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Internal SKU</label>
-                        <input type="text" name="sku" class="form-control" maxlength="64"
-                               placeholder="Auto: SKU-{id} if empty"
+                        <label class="form-label text-muted small fw-bold">INTERNAL SKU</label>
+                        <input type="text" name="sku" class="form-control form-control-lg-touch" maxlength="64"
+                               placeholder="Auto: SKU-{id}"
                                value="<?= htmlspecialchars($val('sku', $ex['sku'] ?? '')) ?>">
                     </div>
-                </div>
+                </div>        </div>
 
                 <p class="section-title">Inventory</p>
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
-                        <label class="form-label">On-hand stock <span class="text-danger">*</span></label>
-                        <input type="number" name="stock" class="form-control" min="0" required
+                        <label class="form-label text-muted small fw-bold">ON-HAND STOCK *</label>
+                        <input type="number" name="stock" class="form-control form-control-lg-touch fw-bold" min="0" required
                                value="<?= htmlspecialchars($val('stock', isset($ex['stock']) ? (string)$ex['stock'] : '0')) ?>">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Reorder level</label>
-                        <input type="number" name="reorder_level" class="form-control" min="0"
+                        <label class="form-label text-muted small fw-bold">REORDER LEVEL</label>
+                        <input type="number" name="reorder_level" class="form-control form-control-lg-touch" min="0"
                                title="Alert when on-hand quantity falls at or below this level"
                                value="<?= htmlspecialchars($val('reorder_level', isset($ex['reorder_level']) ? (string)$ex['reorder_level'] : '0')) ?>">
                     </div>
@@ -625,10 +646,10 @@ $ex = $existing ?? [];
                     <p class="small text-muted mb-2">Check <strong>Remove</strong> to delete an image on save. Primary is the first remaining image.</p>
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         <?php foreach ($existingImages as $img): ?>
-                            <div class="existing-image-tile">
+                            <div class="existing-image-tile" id="tile_<?= (int)$img['id'] ?>">
                                 <img src="../<?= htmlspecialchars((string)$img['file_path']) ?>" alt="">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="delete_image[]" value="<?= (int)$img['id'] ?>" id="del_img_<?= (int)$img['id'] ?>">
+                                <div class="remove-overlay" onclick="toggleImageDelete(<?= (int)$img['id'] ?>)">
+                                    <input class="form-check-input" type="checkbox" name="delete_image[]" value="<?= (int)$img['id'] ?>" id="del_img_<?= (int)$img['id'] ?>" onclick="event.stopPropagation(); updateTileState(<?= (int)$img['id'] ?>)">
                                     <label class="form-check-label" for="del_img_<?= (int)$img['id'] ?>">Remove</label>
                                 </div>
                             </div>
@@ -645,9 +666,9 @@ $ex = $existing ?? [];
                     <div id="image_preview" class="d-flex flex-wrap gap-2 mt-3"></div>
                 </div>
 
-                <div class="d-flex flex-wrap gap-2 pt-2 border-top">
-                    <button type="submit" class="btn btn-primary"><?= $editId > 0 ? 'Save changes' : 'Save product' ?></button>
-                    <a href="dashboard.php?page=products" class="btn btn-outline-secondary">Cancel</a>
+                <div class="d-flex flex-column flex-sm-row gap-3 pt-4 border-top">
+                    <button type="submit" class="btn btn-primary btn-lg-touch"><?= $editId > 0 ? '<i class="fa-solid fa-save me-2"></i>Save Changes' : '<i class="fa-solid fa-plus-circle me-2"></i>Create Product' ?></button>
+                    <a href="dashboard.php?page=products" class="btn btn-outline-secondary btn-lg-touch d-flex align-items-center justify-content-center">Cancel</a>
                 </div>
             </form>
         </div>
@@ -773,6 +794,26 @@ $ex = $existing ?? [];
         addFiles(e.dataTransfer.files);
     });
 })();
+
+function toggleImageDelete(id) {
+    const cb = document.getElementById('del_img_' + id);
+    if (cb) {
+        cb.checked = !cb.checked;
+        updateTileState(id);
+    }
+}
+
+function updateTileState(id) {
+    const tile = document.getElementById('tile_' + id);
+    const cb = document.getElementById('del_img_' + id);
+    if (tile && cb) {
+        if (cb.checked) {
+            tile.classList.add('marked-delete');
+        } else {
+            tile.classList.remove('marked-delete');
+        }
+    }
+}
 </script>
 </body>
 </html>
